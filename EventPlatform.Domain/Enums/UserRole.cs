@@ -3,6 +3,5 @@
 public enum UserRole
 {
     Admin = 0,
-    Organizer = 1,
-    Attendee = 2
+    User = 1
 }
