@@ -56,10 +56,10 @@ public class AuthServices : IAuthServices
             {
                 Email = email,
                 UserName = email.Split('@')[0],
-                //FirstName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty,
-                //LastName = claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty,
+                FullName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value,
+                UserRole = UserRole.User,
+                AccountStatus = "Active",
                 EmailConfirmed = true,
-                //ProfilePictureUrl = claimsPrincipal.FindFirst("picture")?.Value ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -156,6 +156,11 @@ public class AuthServices : IAuthServices
 
         return new LoginResponse
         {   
+            UserId = user.UserId,
+            UserName = user.UserName,
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = user.UserRole,
             RefreshToken = user.RefreshToken,
             RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
         };
