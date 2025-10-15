@@ -126,7 +126,7 @@ public class AuthServices : IAuthServices
     
     public async Task<LoginResponse?> Login(LoginRequest request)
     {
-        var user = await _userRepository.FindByEmailAsync(request.Email);
+        var user = await _userRepository.FindByNameAsync(request.UserName);
         if (user == null)
         {
             throw new GlobalException("Invalid email or password");
