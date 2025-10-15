@@ -5,11 +5,11 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class Feedback
 {
-    public int FeedbackId { get; set; }
+    public Guid FeedbackId { get; set; }
 
-    public int EventId { get; set; }
+    public Guid EventId { get; set; }
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     public byte Rating { get; set; }
 

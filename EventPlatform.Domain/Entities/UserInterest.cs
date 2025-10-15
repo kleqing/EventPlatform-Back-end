@@ -5,9 +5,9 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class UserInterest
 {
-    public int UserInterestId { get; set; }
+    public Guid UserInterestId { get; set; }
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     public string InterestName { get; set; } = null!;
 

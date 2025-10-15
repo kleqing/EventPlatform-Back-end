@@ -6,7 +6,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class User
 {
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     
     public string UserName { get; set; } = null!;
 
@@ -20,7 +20,7 @@ public partial class User
 
     public string? PhoneNumber { get; set; }
 
-    public UserRole UserRole { get; set; }
+    public UserRole UserRole { get; set; } = UserRole.User;
 
     public string AccountStatus { get; set; } = null!;
 
@@ -45,6 +45,8 @@ public partial class User
     public string? AddressDistrict { get; set; }
 
     public string? AddressCity { get; set; }
+    
+    public bool EmailConfirmed { get; set; }
 
     public virtual ICollection<Connection> ConnectionReceivers { get; set; } = new List<Connection>();
 

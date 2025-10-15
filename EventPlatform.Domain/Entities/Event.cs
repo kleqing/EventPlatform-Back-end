@@ -5,7 +5,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class Event
 {
-    public int EventId { get; set; }
+    public Guid EventId { get; set; }
 
     public string Title { get; set; } = null!;
 
@@ -25,7 +25,7 @@ public partial class Event
 
     public string EventStatus { get; set; } = null!;
 
-    public int CreatedByUserId { get; set; }
+    public Guid CreatedByUserId { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
@@ -51,7 +51,7 @@ public partial class Event
 
     public string? AddressCity { get; set; }
 
-    public int? CategoryId { get; set; }
+    public Guid? CategoryId { get; set; }
 
     public virtual EventCategory? Category { get; set; }
 

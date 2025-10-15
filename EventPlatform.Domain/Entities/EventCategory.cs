@@ -5,7 +5,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class EventCategory
 {
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
 
     public string Name { get; set; } = null!;
 

@@ -7,9 +7,9 @@ public partial class Registration
 {
     public Guid RegistrationId { get; set; }
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
-    public int TicketTypeId { get; set; }
+    public Guid TicketTypeId { get; set; }
 
     public DateTime? RegistrationDate { get; set; }
 
