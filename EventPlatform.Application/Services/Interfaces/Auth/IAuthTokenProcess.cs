@@ -1,6 +1,6 @@
 ﻿using EventPlatform.Domain.Entities;
 
-namespace EventPlatform.Application.Services.Interfaces;
+namespace EventPlatform.Application.Services.Interfaces.Auth;
 
 public interface IAuthTokenProcess
 {
@@ -8,4 +8,7 @@ public interface IAuthTokenProcess
     string GenerateRefreshToken();
     void WriteAuthTokenAsHttpOnlyCookie(string cookieName, string token, DateTime expiry);
     void DeleteAuthTokenCookie(string key);
+    Task<string> GenerateEmailConfirmationTokenAsync(User user);
+    Task<string> GeneratePasswordTokenResetAsync(User user);
+    bool ValidateEmailConfirmationToken(User user, string token);
 }
