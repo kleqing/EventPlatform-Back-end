@@ -14,7 +14,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EventPlatform.WebApi.Controllers;
 
-public class AuthController : Controller
+[Route("api/[controller]")]
+[ApiController]
+public class AuthController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly IAuthTokenProcess _authTokenProcess;
