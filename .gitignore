@@ -59,4 +59,5 @@ nunit-*.xml
 # Dotnet ef Migrations
 [Mm]igrations/
 
+# Environment variables file
 .env
