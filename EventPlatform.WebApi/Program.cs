@@ -78,14 +78,20 @@ public class Program
         });
 
         //* Authentication & Authorization
-        
         builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme =  JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = "External";
             })
             .AddJwtBearer("Bearer", _ =>
                 { })
+            .AddCookie("External", options =>
+            {
+                options.LoginPath = "/api/auth/login-google";
+                options.AccessDeniedPath = "/access-denied";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            })
             .AddGoogle(options =>
             {
                 var clientId = options.ClientId =
@@ -109,7 +115,7 @@ public class Program
         {
             var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"] ?? string.Empty;
             var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"] ?? string.Empty;
-            var secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET;"] ?? string.Empty;
+            var secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"] ?? string.Empty;
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -122,6 +128,27 @@ public class Program
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
                 ClockSkew = TimeSpan.Zero, //* Disable the default 5-minute clock skew
                 RequireExpirationTime = true //* Require the token to have an expiration time
+            };
+            
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var token = context.Request.Cookies["ACCESS_TOKEN"];
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        context.Token = token;
+                    }
+                    return Task.CompletedTask;
+                },
+                OnAuthenticationFailed = context =>
+                {
+                    if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                    {
+                        context.Response.Headers.Add("Token-Expired", "true");
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
         
