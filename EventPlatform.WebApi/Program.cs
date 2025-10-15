@@ -1,12 +1,17 @@
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using dotenv.net;
+using EventPlatform.Application.Services.Interfaces.Email;
 using EventPlatform.Infrastructure.Data;
+using EventPlatform.Infrastructure.Services.Email;
 using EventPlatform.Shared.Jwt;
+using EventPlatform.Shared.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 namespace EventPlatform.WebApi;
 
@@ -18,8 +23,12 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         //* Use configuration from appsettings.json and environment variables if one exists
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-                               Environment.GetEnvironmentVariable("DefaultConnection");
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
+        }
+        
         builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
         //* Dependencies Injection
@@ -46,9 +55,17 @@ public class Program
             }
         }
 
+        //* Some DI registrations can override for services lifetimes
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.AddSingleton<CloudinaryUploader>();
+        
         // Add services to the container.
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        });
 
         //* JWT Settings
         
@@ -64,8 +81,8 @@ public class Program
         
         builder.Services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = "Bearer";
-                options.DefaultChallengeScheme = "Bearer";
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme =  JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer("Bearer", _ =>
                 { })
@@ -128,6 +145,36 @@ public class Program
         
         builder.Services.AddHttpContextAccessor();
         
+        //* Redis Cache
+        builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+        {
+            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? 
+                                        builder.Configuration["Redis:ConnectionString"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                throw new InvalidOperationException("Redis connection string is not set in environment variables.");
+            }
+
+            var configurationOptions = ConfigurationOptions.Parse(redisConnectionString, true);
+            configurationOptions.AbortOnConnectFail = false;
+
+            try
+            {
+                return ConnectionMultiplexer.Connect(configurationOptions);
+            }
+            catch (RedisConnectionException ex)
+            {
+                throw new InvalidOperationException("Failed to connect to Redis: " + ex.Message, ex);
+            }
+        });
+        
+        builder.Services.AddScoped<IDatabase>(sp =>
+        {
+            var connection = sp.GetRequiredService<IConnectionMultiplexer>();
+            return connection.GetDatabase();
+        });
+        
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -139,11 +186,12 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        app.UseAuthentication();
-        app.UseAuthorization();
-
+        app.UseRouting();
         app.UseCors("AllowAll");
 
+        app.UseAuthentication();
+        app.UseAuthorization();
+        
         app.MapControllers();
 
         app.Run();
