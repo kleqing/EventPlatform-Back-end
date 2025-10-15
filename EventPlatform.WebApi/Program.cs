@@ -133,7 +133,8 @@ public class Program
             options.AddPolicy("AllowAll",
                 policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("https://localhost:7105")
+                        .AllowCredentials()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
@@ -148,12 +149,14 @@ public class Program
         //* Redis Cache
         builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
-            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? 
-                                        builder.Configuration["Redis:ConnectionString"] ?? string.Empty;
-
+            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
             if (string.IsNullOrWhiteSpace(redisConnectionString))
             {
-                throw new InvalidOperationException("Redis connection string is not set in environment variables.");
+                redisConnectionString = builder.Configuration["REDIS_CONNECTION_STRING"];
+                if (string.IsNullOrWhiteSpace(redisConnectionString))
+                {
+                    throw new InvalidOperationException("Redis connection string is not configured.");
+                }
             }
 
             var configurationOptions = ConfigurationOptions.Parse(redisConnectionString, true);
