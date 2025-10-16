@@ -56,10 +56,10 @@ public class AuthServices : IAuthServices
             {
                 Email = email,
                 UserName = email.Split('@')[0],
-                //FirstName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty,
-                //LastName = claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty,
+                FullName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value,
+                UserRole = UserRole.User,
+                AccountStatus = "Active",
                 EmailConfirmed = true,
-                //ProfilePictureUrl = claimsPrincipal.FindFirst("picture")?.Value ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -99,11 +99,11 @@ public class AuthServices : IAuthServices
         var user = new User
         {
             UserName = request.UserName,
-            //FirstName = request.FirstName,
-            //LastName = request.LastName,
+            FullName = request.FullName,
             Email = request.Email,
-            //PhoneNumber = request.PhoneNumber,
-            //Address = request.Address,
+            PasswordHash = request.Password,
+            AccountStatus = "Active",
+            UserRole = UserRole.User,
             EmailConfirmed = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -156,6 +156,11 @@ public class AuthServices : IAuthServices
 
         return new LoginResponse
         {   
+            UserId = user.UserId,
+            UserName = user.UserName,
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = user.UserRole,
             RefreshToken = user.RefreshToken,
             RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
         };
@@ -164,34 +169,44 @@ public class AuthServices : IAuthServices
     public async Task InitiatePasswordReset(string email)
     {
         var user = await _userRepository.FindByEmailAsync(email);
-        if (user != null && await _userRepository.IsEmailConfirmedAsync(user))
+        if (user == null)
         {
-            var token = await _authTokenProcess.GeneratePasswordTokenResetAsync(user);
-            var redisKey = $"{RedisPrefix}:{token}";
+            // To prevent email enumeration, do not reveal that the email does not exist
+            return;
+        }
+        
+        if (!await _userRepository.IsEmailConfirmedAsync(user))
+        {
+            //* If email is not confirmed, resend confirmation email automatically
+            await ResendEmailConfirmationAsync(user);
+            throw new GlobalException("Your email is not verified. We've resent the verification link.");
+        }
+        
+        var token = await _authTokenProcess.GeneratePasswordTokenResetAsync(user);
+        var redisKey = $"{RedisPrefix}:{token}";
 
-            try
+        try
+        {
+            bool result = await _redisDatabase.StringSetAsync(redisKey, user.UserId.ToString(), TimeSpan.FromHours(1), When.NotExists);
+            if (result)
             {
-                bool result = await _redisDatabase.StringSetAsync(redisKey, user.UserId.ToString(), TimeSpan.FromHours(1), When.NotExists);
-                if (result)
-                {
-                    var encodedToken = WebUtility.UrlEncode(token);
-                    var backendUrl = UrlHelper.GetBackendUrl(_configuration);
+                var encodedToken = Uri.EscapeDataString(token);
+                var backendUrl = UrlHelper.GetBackendUrl(_configuration);
 
-                    var resetLink =
-                        $"{backendUrl}/reset-password?userId={user.UserId}&token={encodedToken}";
-                    
-                    await _emailSender.SendEmailAsync(user.Email, "Reset your password", resetLink);
-                }
-                else
-                {
-                    // A reset request is already in progress
-                    throw new GlobalException("A password reset request is already in progress. Please check your email.");
-                }
+                var resetLink =
+                    $"{backendUrl}/api/auth/reset-password/verify?token={encodedToken}";
+                
+                await _emailSender.SendEmailAsync(user.Email, "Reset your password", resetLink);
             }
-            catch
+            else
             {
-                throw new GlobalException("An error occurred while processing your request. Please try again later.");
+                // A reset request is already in progress
+                throw new GlobalException("A password reset request is already in progress. Please check your email.");
             }
+        }
+        catch
+        {
+            throw new GlobalException("An error occurred while processing your request. Please try again later.");
         }
     }
     
@@ -215,7 +230,12 @@ public class AuthServices : IAuthServices
     }
     public async Task ResetPasswordAsync(ResetPasswordRequest request)
     {
-        var redisKey = $"{RedisPrefix}:{request.Token}";
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            throw new GlobalException("Token is required");
+        }
+        var decodedToken = Uri.UnescapeDataString(request.Token);
+        var redisKey = $"{RedisPrefix}:{decodedToken}";
         var userIdValue = await _redisDatabase.StringGetAsync(redisKey);
 
         if (userIdValue.IsNullOrEmpty)
