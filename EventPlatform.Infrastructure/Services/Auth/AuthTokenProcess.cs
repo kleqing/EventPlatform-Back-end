@@ -123,7 +123,8 @@ public class AuthTokenProcess : IAuthTokenProcess
 
             var principal = tokenHandler.ValidateToken(token, parameters, out _);
             var purpose = principal.FindFirst("purpose")?.Value;
-            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+                         ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             return purpose == "email_confirmation" && userId == user.UserId.ToString();
         }
