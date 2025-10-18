@@ -136,7 +136,7 @@ public class AuthController : ControllerBase
         }
 
         var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
-        return Redirect($"{frontendUrl}/verify-success?verifiedEmail={Uri.EscapeDataString(user.Email)}");
+        return Redirect($"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail={Uri.EscapeDataString(user.Email)}");
     }
 
     [AllowAnonymous]
