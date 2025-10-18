@@ -1,8 +1,8 @@
-﻿using  EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Enums;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace EventPlatform.Infrastructure.Data;
+namespace EventPlatform.Infrastructure;
 
 public partial class ApplicationDbContext : DbContext
 {
@@ -39,8 +39,12 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
-    public virtual DbSet<User> User { get; set; }
-    
+    public virtual DbSet<User> Users { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=db29729.public.databaseasp.net; Database=db29729; User Id=db29729; Password=9q!NsJ7?+hE4; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Vietnamese_CI_AS");
@@ -49,9 +53,13 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.ConnectionId).HasName("PK__Connecti__404A64F3F329D63A");
 
+            entity.HasIndex(e => e.ReceiverId, "IX_Connections_ReceiverID");
+
             entity.HasIndex(e => new { e.RequesterId, e.ReceiverId }, "UQ__Connecti__63A81B340BAB5868").IsUnique();
 
-            entity.Property(e => e.ConnectionId).HasColumnName("ConnectionID");
+            entity.Property(e => e.ConnectionId)
+                .ValueGeneratedNever()
+                .HasColumnName("ConnectionID");
             entity.Property(e => e.ConnectionStatus)
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
@@ -75,7 +83,13 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.EventId).HasName("PK__Events__7944C870C0DBAE17");
 
-            entity.Property(e => e.EventId).HasColumnName("EventID");
+            entity.HasIndex(e => e.CategoryId, "IX_Events_CategoryID");
+
+            entity.HasIndex(e => e.CreatedByUserId, "IX_Events_CreatedByUserID");
+
+            entity.Property(e => e.EventId)
+                .ValueGeneratedNever()
+                .HasColumnName("EventID");
             entity.Property(e => e.AddressCity)
                 .HasMaxLength(100)
                 .HasColumnName("Address_City");
@@ -138,6 +152,7 @@ public partial class ApplicationDbContext : DbContext
                     {
                         j.HasKey("EventId", "SpeakerId").HasName("PK__EventSpe__FEDABD037E2F109B");
                         j.ToTable("EventSpeakers");
+                        j.HasIndex(new[] { "SpeakerId" }, "IX_EventSpeakers_SpeakerID");
                         j.IndexerProperty<Guid>("EventId").HasColumnName("EventID");
                         j.IndexerProperty<Guid>("SpeakerId").HasColumnName("SpeakerID");
                     });
@@ -155,6 +170,7 @@ public partial class ApplicationDbContext : DbContext
                     {
                         j.HasKey("EventId", "TagId").HasName("PK__EventTag__AF1307D4AC18CBFE");
                         j.ToTable("EventTags");
+                        j.HasIndex(new[] { "TagId" }, "IX_EventTags_TagID");
                         j.IndexerProperty<Guid>("EventId").HasColumnName("EventID");
                         j.IndexerProperty<Guid>("TagId").HasColumnName("TagID");
                     });
@@ -166,7 +182,9 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.Name, "UQ__EventCat__737584F69D7C80DA").IsUnique();
 
-            entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
+            entity.Property(e => e.CategoryId)
+                .ValueGeneratedNever()
+                .HasColumnName("CategoryID");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Name).HasMaxLength(100);
         });
@@ -175,9 +193,13 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF621F78E2D");
 
+            entity.HasIndex(e => e.UserId, "IX_Feedbacks_UserID");
+
             entity.HasIndex(e => new { e.EventId, e.UserId }, "UQ__Feedback__A83C44BB5BE05DB2").IsUnique();
 
-            entity.Property(e => e.FeedbackId).HasColumnName("FeedbackID");
+            entity.Property(e => e.FeedbackId)
+                .ValueGeneratedNever()
+                .HasColumnName("FeedbackID");
             entity.Property(e => e.EventId).HasColumnName("EventID");
             entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.UserId).HasColumnName("UserID");
@@ -197,7 +219,9 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.CategoryId).HasName("PK__ForumCat__19093A2B2AB950A8");
 
-            entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
+            entity.Property(e => e.CategoryId)
+                .ValueGeneratedNever()
+                .HasColumnName("CategoryID");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Name).HasMaxLength(100);
         });
@@ -206,7 +230,15 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.CommentId).HasName("PK__ForumCom__C3B4DFAAFF30E467");
 
-            entity.Property(e => e.CommentId).HasColumnName("CommentID");
+            entity.HasIndex(e => e.ParentCommentId, "IX_ForumComments_ParentCommentID");
+
+            entity.HasIndex(e => e.PostId, "IX_ForumComments_PostID");
+
+            entity.HasIndex(e => e.UserId, "IX_ForumComments_UserID");
+
+            entity.Property(e => e.CommentId)
+                .ValueGeneratedNever()
+                .HasColumnName("CommentID");
             entity.Property(e => e.CommentStatus)
                 .HasMaxLength(30)
                 .HasDefaultValue("Visible");
@@ -233,7 +265,13 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.PostId).HasName("PK__ForumPos__AA1260381DF73643");
 
-            entity.Property(e => e.PostId).HasColumnName("PostID");
+            entity.HasIndex(e => e.CategoryId, "IX_ForumPosts_CategoryID");
+
+            entity.HasIndex(e => e.UserId, "IX_ForumPosts_UserID");
+
+            entity.Property(e => e.PostId)
+                .ValueGeneratedNever()
+                .HasColumnName("PostID");
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.PostStatus)
@@ -257,6 +295,10 @@ public partial class ApplicationDbContext : DbContext
         modelBuilder.Entity<Registration>(entity =>
         {
             entity.HasKey(e => e.RegistrationId).HasName("PK__Registra__6EF5883020182024");
+
+            entity.HasIndex(e => e.TicketTypeId, "IX_Registrations_TicketTypeID");
+
+            entity.HasIndex(e => e.UserId, "IX_Registrations_UserID");
 
             entity.HasIndex(e => e.UniqueToken, "UQ__Registra__64D6B76BF2029CAF").IsUnique();
 
@@ -285,7 +327,9 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.UserId, "UQ__SpeakerP__1788CCADE5A4ADD4").IsUnique();
 
-            entity.Property(e => e.SpeakerId).HasColumnName("SpeakerID");
+            entity.Property(e => e.SpeakerId)
+                .ValueGeneratedNever()
+                .HasColumnName("SpeakerID");
             entity.Property(e => e.ApprovalStatus)
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
@@ -310,7 +354,9 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.TagName, "UQ__Tags__BDE0FD1DADA54021").IsUnique();
 
-            entity.Property(e => e.TagId).HasColumnName("TagID");
+            entity.Property(e => e.TagId)
+                .ValueGeneratedNever()
+                .HasColumnName("TagID");
             entity.Property(e => e.TagName).HasMaxLength(100);
         });
 
@@ -318,7 +364,11 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.TicketTypeId).HasName("PK__TicketTy__6CD6845136423C2A");
 
-            entity.Property(e => e.TicketTypeId).HasColumnName("TicketTypeID");
+            entity.HasIndex(e => e.EventId, "IX_TicketTypes_EventID");
+
+            entity.Property(e => e.TicketTypeId)
+                .ValueGeneratedNever()
+                .HasColumnName("TicketTypeID");
             entity.Property(e => e.EventId).HasColumnName("EventID");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
@@ -332,7 +382,11 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A4B6F90F432");
 
-            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
+            entity.HasIndex(e => e.RegistrationId, "IX_Transactions_RegistrationID");
+
+            entity.Property(e => e.TransactionId)
+                .ValueGeneratedNever()
+                .HasColumnName("TransactionID");
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.GatewayTransactionId)
                 .HasMaxLength(255)
@@ -356,15 +410,16 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCAC49C63A2F");
 
+            entity.ToTable("User");
+
             entity.HasIndex(e => e.Email, "UQ__Users__A9D105346E9F1B33").IsUnique();
 
-            entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.UserId)
+                .ValueGeneratedNever()
+                .HasColumnName("UserID");
             entity.Property(e => e.AccountStatus)
                 .HasMaxLength(20)
                 .HasDefaultValue("PendingVerification");
-            entity.Property(e => e.UserName)
-                .HasMaxLength(50)
-                .HasColumnName("UserName");
             entity.Property(e => e.AddressCity)
                 .HasMaxLength(100)
                 .HasColumnName("Address_City");
@@ -392,10 +447,27 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.PhoneNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.UserRole)
-                .HasMaxLength(20);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.UserName).HasMaxLength(50);
+
+            entity.HasMany(d => d.Tags).WithMany(p => p.Users)
+                .UsingEntity<Dictionary<string, object>>(
+                    "UserTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .HasConstraintName("FK__UserTags__TagID__06CD04F7"),
+                    l => l.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK__UserTags__UserID__05D8E0BE"),
+                    j =>
+                    {
+                        j.HasKey("UserId", "TagId").HasName("PK__UserTags__C1DF03084003AC5F");
+                        j.ToTable("UserTags");
+                        j.IndexerProperty<Guid>("UserId").HasColumnName("UserID");
+                        j.IndexerProperty<Guid>("TagId").HasColumnName("TagID");
+                    });
         });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
