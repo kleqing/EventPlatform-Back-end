@@ -5,7 +5,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class Transaction
 {
-    public Guid TransactionId { get; set; }
+    public int TransactionId { get; set; }
 
     public Guid RegistrationId { get; set; }
 

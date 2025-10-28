@@ -5,13 +5,13 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class ForumComment
 {
-    public Guid CommentId { get; set; }
+    public int CommentId { get; set; }
 
-    public Guid PostId { get; set; }
+    public int PostId { get; set; }
 
     public Guid UserId { get; set; }
 
-    public Guid? ParentCommentId { get; set; }
+    public int? ParentCommentId { get; set; }
 
     public string Content { get; set; } = null!;
 

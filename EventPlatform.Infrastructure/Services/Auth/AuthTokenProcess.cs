@@ -17,14 +17,14 @@ public class AuthTokenProcess : IAuthTokenProcess
     private readonly Jwt _jwt;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHostEnvironment _env;
-    
+
     public AuthTokenProcess(IOptions<Jwt> jwt, IHttpContextAccessor httpContextAccessor, IHostEnvironment env)
     {
         _jwt = jwt.Value;
         _httpContextAccessor = httpContextAccessor;
         _env = env;
     }
-    
+
     public (string Token, DateTime Expiry) GenerateToken(User user)
     {
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
@@ -69,10 +69,10 @@ public class AuthTokenProcess : IAuthTokenProcess
         var context = _httpContextAccessor.HttpContext;
         context?.Response.Cookies.Delete(key);
     }
-    
+
     public Task<string> GenerateEmailConfirmationTokenAsync(User user)
         => Task.FromResult(GenerateTokenWithPurpose(user, "email_confirmation", TimeSpan.FromHours(24)));
-    
+
     public Task<string> GeneratePasswordTokenResetAsync(User user)
     {
         var token = GenerateRefreshToken();
@@ -101,7 +101,7 @@ public class AuthTokenProcess : IAuthTokenProcess
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    
+
     public bool ValidateEmailConfirmationToken(User user, string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -123,7 +123,7 @@ public class AuthTokenProcess : IAuthTokenProcess
 
             var principal = tokenHandler.ValidateToken(token, parameters, out _);
             var purpose = principal.FindFirst("purpose")?.Value;
-            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+            var userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                          ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             return purpose == "email_confirmation" && userId == user.UserId.ToString();
@@ -134,7 +134,7 @@ public class AuthTokenProcess : IAuthTokenProcess
         }
     }
 
-    
+
     private CookieOptions BuildCookieOptions(DateTime? expiry = null)
     {
         return new CookieOptions

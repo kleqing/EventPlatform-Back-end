@@ -5,7 +5,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class SpeakerProfile
 {
-    public Guid SpeakerId { get; set; }
+    public int SpeakerId { get; set; }
 
     public Guid UserId { get; set; }
 

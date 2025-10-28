@@ -30,7 +30,7 @@ public class AuthController : ControllerBase
         _authorizeServices = authorizeServices;
         _configuration = configuration;
     }
-    
+
     [AllowAnonymous]
     [HttpGet("login-google")]
     public IActionResult LoginWithGoogle(string returnUrl)
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
-    
+
     [HttpGet("external-login-callback")]
     public async Task<IActionResult> ExternalLoginCallback(string returnUrl)
     {
@@ -87,7 +87,7 @@ public class AuthController : ControllerBase
         }
         return Ok(response);
     }
-    
+
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -112,7 +112,7 @@ public class AuthController : ControllerBase
         }
         return Ok(response);
     }
-    
+
     [AllowAnonymous]
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
@@ -128,7 +128,7 @@ public class AuthController : ControllerBase
         {
             return BadRequest("Email confirmation failed.");
         }
-        
+
         var confirmedUser = await _userRepository.ConfirmEmailAsync(user);
         if (confirmedUser == null)
         {
@@ -144,7 +144,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ForgotPassword(string email)
     {
         var response = new BaseResultResponse<string>();
-        
+
         try
         {
             await _authorizeServices.InitiatePasswordReset(email);
@@ -168,7 +168,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> VerifyResetToken([FromQuery] string token)
     {
         var response = new BaseResultResponse<bool>();
-        
+
         if (string.IsNullOrEmpty(token))
         {
             response.StatusCode = StatusCodes.Status400BadRequest;
@@ -177,7 +177,7 @@ public class AuthController : ControllerBase
             response.Data = false;
             return BadRequest(response);
         }
-        
+
         var isTokenValid = await _authorizeServices.VerifyPasswordResetToken(token);
         if (!isTokenValid)
         {
@@ -204,7 +204,7 @@ public class AuthController : ControllerBase
         {
             return BadRequest("Token is required.");
         }
-        
+
         if (request.NewPassword != request.ConfirmPassword)
         {
             return BadRequest("Passwords do not match.");
@@ -282,7 +282,7 @@ public class AuthController : ControllerBase
                 response.Data = null;
                 return BadRequest(response);
             }
-            
+
             var user = await _userRepository.FindByIdAsync(userId);
             if (user == null)
             {
@@ -292,7 +292,7 @@ public class AuthController : ControllerBase
                 response.Data = null;
                 return NotFound(response);
             }
-            
+
             await _authorizeServices.Logout(user);
             response.StatusCode = StatusCodes.Status200OK;
             response.Success = true;

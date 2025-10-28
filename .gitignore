@@ -64,3 +64,7 @@ nunit-*.xml
 
 # Dotsettings files
 *.DotSettings.user
+/.vs/EventPlatform/CopilotIndices/17.14.1347.20289
+*.v2
+/.vs
+/EventPlatform.WebApi/.env.template

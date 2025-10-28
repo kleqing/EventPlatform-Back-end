@@ -15,13 +15,13 @@ public class UserRepository : IUserRepository
     {
         _context = context;
     }
-    
+
     public async Task<User?> FindByEmailAsync(string email)
     {
         return await _context.User
             .FirstOrDefaultAsync(u => u.Email == email);
     }
-    
+
     public async Task<User?> FindByIdAsync(string userId)
     {
         if (!Guid.TryParse(userId, out var guid))
@@ -37,9 +37,9 @@ public class UserRepository : IUserRepository
     public async Task<User?> FindByNameAsync(string userName)
     {
         return await _context.User
-            .FirstOrDefaultAsync(u => u.UserName == userName);
+            .FirstOrDefaultAsync(u => u.FullName == userName);
     }
-    
+
     public async Task CreateAsync(User user)
     {
         await _context.User.AddAsync(user);
@@ -52,13 +52,13 @@ public class UserRepository : IUserRepository
         await _context.User.AddAsync(user);
         await _context.SaveChangesAsync();
     }
-    
+
     public async Task UpdateAsync(User user)
     {
         _context.User.Update(user);
         await _context.SaveChangesAsync();
     }
-    
+
     public async Task DeleteAsync(User user)
     {
         _context.User.Remove(user);
@@ -71,9 +71,9 @@ public class UserRepository : IUserRepository
         if (userInDb == null)
         {
             return null;
-            
+
         }
-        userInDb.UserRole = roleName;
+        userInDb.Role = roleName.ToString();
         await _context.SaveChangesAsync();
         return userInDb;
     }
@@ -89,7 +89,7 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
         return userInDb;
     }
-    
+
     public async Task<bool> CheckPasswordAsync(User user, string password)
     {
         var userInDb = await _context.User.FirstOrDefaultAsync(u => u.UserId == user.UserId);
@@ -101,7 +101,7 @@ public class UserRepository : IUserRepository
         var userInDb = await _context.User.FirstOrDefaultAsync(u => u.UserId == user.UserId);
         return userInDb?.EmailConfirmed ?? false;
     }
-    
+
     public async Task<User?> ResetPasswordAsync(User user, string newPassword)
     {
         var userInDb = await _context.User.FirstOrDefaultAsync(u => u.UserId == user.UserId);

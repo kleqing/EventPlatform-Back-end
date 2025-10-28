@@ -1,5 +1,6 @@
-﻿using  EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Enums;
+﻿using System;
+using System.Collections.Generic;
+using EventPlatform.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventPlatform.Infrastructure.Data;
@@ -41,17 +42,13 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<User> User { get; set; }
 
-    public virtual DbSet<UserInterest> UserInterests { get; set; }
-    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.UseCollation("Vietnamese_CI_AS");
-
         modelBuilder.Entity<Connection>(entity =>
         {
-            entity.HasKey(e => e.ConnectionId).HasName("PK__Connecti__404A64F3F329D63A");
+            entity.HasKey(e => e.ConnectionId).HasName("PK__Connecti__404A64F34DA27EFE");
 
-            entity.HasIndex(e => new { e.RequesterId, e.ReceiverId }, "UQ__Connecti__63A81B340BAB5868").IsUnique();
+            entity.HasIndex(e => new { e.RequesterId, e.ReceiverId }, "UQ__Connecti__63A81B34272D305D").IsUnique();
 
             entity.Property(e => e.ConnectionId).HasColumnName("ConnectionID");
             entity.Property(e => e.ConnectionStatus)
@@ -65,17 +62,17 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Receiver).WithMany(p => p.ConnectionReceivers)
                 .HasForeignKey(d => d.ReceiverId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Connectio__Recei__09A971A2");
+                .HasConstraintName("FK__Connectio__Recei__1CBC4616");
 
             entity.HasOne(d => d.Requester).WithMany(p => p.ConnectionRequesters)
                 .HasForeignKey(d => d.RequesterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Connectio__Reque__08B54D69");
+                .HasConstraintName("FK__Connectio__Reque__1BC821DD");
         });
 
         modelBuilder.Entity<Event>(entity =>
         {
-            entity.HasKey(e => e.EventId).HasName("PK__Events__7944C870C0DBAE17");
+            entity.HasKey(e => e.EventId).HasName("PK__Events__7944C87090AE50A7");
 
             entity.Property(e => e.EventId).HasColumnName("EventID");
             entity.Property(e => e.AddressCity)
@@ -111,37 +108,35 @@ public partial class ApplicationDbContext : DbContext
                 .HasMaxLength(500)
                 .HasColumnName("OrganizerLogoURL");
             entity.Property(e => e.OrganizerName).HasMaxLength(255);
-            entity.Property(e => e.ThumbnailUrl)
-                .HasMaxLength(500)
-                .HasColumnName("ThumbnailURL");
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.VenueName).HasMaxLength(255);
 
             entity.HasOne(d => d.Category).WithMany(p => p.Events)
                 .HasForeignKey(d => d.CategoryId)
-                .HasConstraintName("FK_Events_EventCategories");
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK__Events__Category__619B8048");
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.Events)
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Events__CreatedB__4AB81AF0");
+                .HasConstraintName("FK__Events__CreatedB__60A75C0F");
 
             entity.HasMany(d => d.Speakers).WithMany(p => p.Events)
                 .UsingEntity<Dictionary<string, object>>(
                     "EventSpeaker",
                     r => r.HasOne<SpeakerProfile>().WithMany()
                         .HasForeignKey("SpeakerId")
-                        .HasConstraintName("FK__EventSpea__Speak__4E88ABD4"),
+                        .HasConstraintName("FK__EventSpea__Speak__656C112C"),
                     l => l.HasOne<Event>().WithMany()
                         .HasForeignKey("EventId")
-                        .HasConstraintName("FK__EventSpea__Event__4D94879B"),
+                        .HasConstraintName("FK__EventSpea__Event__6477ECF3"),
                     j =>
                     {
-                        j.HasKey("EventId", "SpeakerId").HasName("PK__EventSpe__FEDABD037E2F109B");
+                        j.HasKey("EventId", "SpeakerId").HasName("PK__EventSpe__FEDABD03355441C9");
                         j.ToTable("EventSpeakers");
-                        j.IndexerProperty<Guid>("EventId").HasColumnName("EventID");
-                        j.IndexerProperty<Guid>("SpeakerId").HasColumnName("SpeakerID");
+                        j.IndexerProperty<int>("EventId").HasColumnName("EventID");
+                        j.IndexerProperty<int>("SpeakerId").HasColumnName("SpeakerID");
                     });
 
             entity.HasMany(d => d.Tags).WithMany(p => p.Events)
@@ -149,24 +144,24 @@ public partial class ApplicationDbContext : DbContext
                     "EventTag",
                     r => r.HasOne<Tag>().WithMany()
                         .HasForeignKey("TagId")
-                        .HasConstraintName("FK__EventTags__TagID__5535A963"),
+                        .HasConstraintName("FK__EventTags__TagID__6C190EBB"),
                     l => l.HasOne<Event>().WithMany()
                         .HasForeignKey("EventId")
-                        .HasConstraintName("FK__EventTags__Event__5441852A"),
+                        .HasConstraintName("FK__EventTags__Event__6B24EA82"),
                     j =>
                     {
-                        j.HasKey("EventId", "TagId").HasName("PK__EventTag__AF1307D4AC18CBFE");
+                        j.HasKey("EventId", "TagId").HasName("PK__EventTag__AF1307D4112F0680");
                         j.ToTable("EventTags");
-                        j.IndexerProperty<Guid>("EventId").HasColumnName("EventID");
-                        j.IndexerProperty<Guid>("TagId").HasColumnName("TagID");
+                        j.IndexerProperty<int>("EventId").HasColumnName("EventID");
+                        j.IndexerProperty<int>("TagId").HasColumnName("TagID");
                     });
         });
 
         modelBuilder.Entity<EventCategory>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__EventCat__19093A2B11FC078B");
+            entity.HasKey(e => e.CategoryId).HasName("PK__EventCat__19093A2B7259550D");
 
-            entity.HasIndex(e => e.Name, "UQ__EventCat__737584F69D7C80DA").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__EventCat__737584F62409828E").IsUnique();
 
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.Description).HasMaxLength(500);
@@ -175,9 +170,9 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Feedback>(entity =>
         {
-            entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF621F78E2D");
+            entity.HasKey(e => e.FeedbackId).HasName("PK__Feedback__6A4BEDF6435AC103");
 
-            entity.HasIndex(e => new { e.EventId, e.UserId }, "UQ__Feedback__A83C44BB5BE05DB2").IsUnique();
+            entity.HasIndex(e => new { e.EventId, e.UserId }, "UQ__Feedback__A83C44BBA11C66BA").IsUnique();
 
             entity.Property(e => e.FeedbackId).HasColumnName("FeedbackID");
             entity.Property(e => e.EventId).HasColumnName("EventID");
@@ -187,17 +182,17 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Event).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.EventId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Feedbacks__Event__6B24EA82");
+                .HasConstraintName("FK__Feedbacks__Event__02084FDA");
 
             entity.HasOne(d => d.User).WithMany(p => p.Feedbacks)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Feedbacks__UserI__6C190EBB");
+                .HasConstraintName("FK__Feedbacks__UserI__02FC7413");
         });
 
         modelBuilder.Entity<ForumCategory>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__ForumCat__19093A2B2AB950A8");
+            entity.HasKey(e => e.CategoryId).HasName("PK__ForumCat__19093A2B2AD081F6");
 
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
             entity.Property(e => e.Description).HasMaxLength(500);
@@ -206,7 +201,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<ForumComment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__ForumCom__C3B4DFAAFF30E467");
+            entity.HasKey(e => e.CommentId).HasName("PK__ForumCom__C3B4DFAA7937AB2C");
 
             entity.Property(e => e.CommentId).HasColumnName("CommentID");
             entity.Property(e => e.CommentStatus)
@@ -219,21 +214,21 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .HasConstraintName("FK__ForumComm__Paren__7D439ABD");
+                .HasConstraintName("FK__ForumComm__Paren__14270015");
 
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .HasConstraintName("FK__ForumComm__PostI__7B5B524B");
+                .HasConstraintName("FK__ForumComm__PostI__123EB7A3");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ForumComm__UserI__7C4F7684");
+                .HasConstraintName("FK__ForumComm__UserI__1332DBDC");
         });
 
         modelBuilder.Entity<ForumPost>(entity =>
         {
-            entity.HasKey(e => e.PostId).HasName("PK__ForumPos__AA1260381DF73643");
+            entity.HasKey(e => e.PostId).HasName("PK__ForumPos__AA1260387E8307A5");
 
             entity.Property(e => e.PostId).HasColumnName("PostID");
             entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
@@ -248,19 +243,19 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Category).WithMany(p => p.ForumPosts)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ForumPost__Categ__75A278F5");
+                .HasConstraintName("FK__ForumPost__Categ__0C85DE4D");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumPosts)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ForumPost__UserI__74AE54BC");
+                .HasConstraintName("FK__ForumPost__UserI__0B91BA14");
         });
 
         modelBuilder.Entity<Registration>(entity =>
         {
-            entity.HasKey(e => e.RegistrationId).HasName("PK__Registra__6EF5883020182024");
+            entity.HasKey(e => e.RegistrationId).HasName("PK__Registra__6EF588309526F900");
 
-            entity.HasIndex(e => e.UniqueToken, "UQ__Registra__64D6B76BF2029CAF").IsUnique();
+            entity.HasIndex(e => e.UniqueToken, "UQ__Registra__64D6B76BE1D20530").IsUnique();
 
             entity.Property(e => e.RegistrationId)
                 .HasDefaultValueSql("(newid())")
@@ -273,19 +268,19 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.TicketType).WithMany(p => p.Registrations)
                 .HasForeignKey(d => d.TicketTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Registrat__Ticke__5EBF139D");
+                .HasConstraintName("FK__Registrat__Ticke__75A278F5");
 
             entity.HasOne(d => d.User).WithMany(p => p.Registrations)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Registrat__UserI__5DCAEF64");
+                .HasConstraintName("FK__Registrat__UserI__74AE54BC");
         });
 
         modelBuilder.Entity<SpeakerProfile>(entity =>
         {
-            entity.HasKey(e => e.SpeakerId).HasName("PK__SpeakerP__79E7573971388250");
+            entity.HasKey(e => e.SpeakerId).HasName("PK__SpeakerP__79E7573992890D7B");
 
-            entity.HasIndex(e => e.UserId, "UQ__SpeakerP__1788CCADE5A4ADD4").IsUnique();
+            entity.HasIndex(e => e.UserId, "UQ__SpeakerP__1788CCAD2DF218E4").IsUnique();
 
             entity.Property(e => e.SpeakerId).HasColumnName("SpeakerID");
             entity.Property(e => e.ApprovalStatus)
@@ -303,14 +298,14 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasOne(d => d.User).WithOne(p => p.SpeakerProfile)
                 .HasForeignKey<SpeakerProfile>(d => d.UserId)
-                .HasConstraintName("FK__SpeakerPr__UserI__4316F928");
+                .HasConstraintName("FK__SpeakerPr__UserI__5629CD9C");
         });
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.HasKey(e => e.TagId).HasName("PK__Tags__657CFA4CF075C3FC");
+            entity.HasKey(e => e.TagId).HasName("PK__Tags__657CFA4C9C957E70");
 
-            entity.HasIndex(e => e.TagName, "UQ__Tags__BDE0FD1DADA54021").IsUnique();
+            entity.HasIndex(e => e.TagName, "UQ__Tags__BDE0FD1D13352806").IsUnique();
 
             entity.Property(e => e.TagId).HasColumnName("TagID");
             entity.Property(e => e.TagName).HasMaxLength(100);
@@ -318,7 +313,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<TicketType>(entity =>
         {
-            entity.HasKey(e => e.TicketTypeId).HasName("PK__TicketTy__6CD6845136423C2A");
+            entity.HasKey(e => e.TicketTypeId).HasName("PK__TicketTy__6CD68451FC03ADAD");
 
             entity.Property(e => e.TicketTypeId).HasColumnName("TicketTypeID");
             entity.Property(e => e.EventId).HasColumnName("EventID");
@@ -327,12 +322,12 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasOne(d => d.Event).WithMany(p => p.TicketTypes)
                 .HasForeignKey(d => d.EventId)
-                .HasConstraintName("FK__TicketTyp__Event__5812160E");
+                .HasConstraintName("FK__TicketTyp__Event__6EF57B66");
         });
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A4B6F90F432");
+            entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A4B252AAD91");
 
             entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
@@ -351,22 +346,21 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Registration).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.RegistrationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Transacti__Regis__656C112C");
+                .HasConstraintName("FK__Transacti__Regis__7C4F7684");
         });
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCAC49C63A2F");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCACA75F16C9");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105346E9F1B33").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D105341FD32804").IsUnique();
 
-            entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.UserId)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("UserID");
             entity.Property(e => e.AccountStatus)
                 .HasMaxLength(20)
                 .HasDefaultValue("PendingVerification");
-            entity.Property(e => e.UserName)
-                .HasMaxLength(50)
-                .HasColumnName("UserName");
             entity.Property(e => e.AddressCity)
                 .HasMaxLength(100)
                 .HasColumnName("Address_City");
@@ -394,24 +388,27 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.PhoneNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.UserRole)
-                .HasMaxLength(20);
+            entity.Property(e => e.Role)
+                .HasMaxLength(20)
+                .HasDefaultValue("User");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getutcdate())");
-        });
 
-        modelBuilder.Entity<UserInterest>(entity =>
-        {
-            entity.HasKey(e => e.UserInterestId).HasName("PK__UserInte__28E6EBDED8E891C9");
-
-            entity.HasIndex(e => new { e.UserId, e.InterestName }, "UQ__UserInte__7AAFC81E24CFD5B4").IsUnique();
-
-            entity.Property(e => e.UserInterestId).HasColumnName("UserInterestID");
-            entity.Property(e => e.InterestName).HasMaxLength(100);
-            entity.Property(e => e.UserId).HasColumnName("UserID");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserInterests)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__UserInter__UserI__01142BA1");
+            entity.HasMany(d => d.Tags).WithMany(p => p.Users)
+                .UsingEntity<Dictionary<string, object>>(
+                    "UserTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .HasConstraintName("FK__UserTags__TagID__208CD6FA"),
+                    l => l.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK__UserTags__UserID__1F98B2C1"),
+                    j =>
+                    {
+                        j.HasKey("UserId", "TagId").HasName("PK__UserTags__C1DF030835A0D596");
+                        j.ToTable("UserTags");
+                        j.IndexerProperty<Guid>("UserId").HasColumnName("UserID");
+                        j.IndexerProperty<int>("TagId").HasColumnName("TagID");
+                    });
         });
 
         OnModelCreatingPartial(modelBuilder);

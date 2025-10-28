@@ -5,9 +5,9 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class TicketType
 {
-    public Guid TicketTypeId { get; set; }
+    public int TicketTypeId { get; set; }
 
-    public Guid EventId { get; set; }
+    public int EventId { get; set; }
 
     public string Name { get; set; } = null!;
 

@@ -5,7 +5,7 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class Connection
 {
-    public Guid ConnectionId { get; set; }
+    public int ConnectionId { get; set; }
 
     public Guid RequesterId { get; set; }
 

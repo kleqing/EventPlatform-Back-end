@@ -32,7 +32,7 @@ public class AuthServices : IAuthServices
         _emailSender = emailSender;
         _configuration = configuration;
     }
-    
+
     public async Task<User> LoginWithGoogle(ClaimsPrincipal claimsPrincipal)
     {
         if (claimsPrincipal == null)
@@ -41,44 +41,43 @@ public class AuthServices : IAuthServices
         }
 
         var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
-        
+
         if (string.IsNullOrEmpty(email))
         {
             throw new GlobalException("Email claim is missing");
         }
-        
+
         var user = await _userRepository.FindByEmailAsync(email);
-        
+
         if (user == null)
         {
             // User does not exist, create a new user
             user = new User
             {
                 Email = email,
-                UserName = email.Split('@')[0],
                 FullName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value,
-                UserRole = UserRole.User,
+                Role = UserRole.User.ToString(),
                 AccountStatus = "Active",
                 EmailConfirmed = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             await _userRepository.CreateAsync(user);
             await _userRepository.AddToRoleAsync(user, UserRole.User);
         }
-        
+
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
         var refreshToken = _authTokenProcess.GenerateRefreshToken();
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        
+
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = refreshTokenExpiry;
         await _userRepository.UpdateAsync(user);
-        
+
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expiry);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", refreshToken, refreshTokenExpiry);
-        
+
         return user;
     }
 
@@ -89,41 +88,40 @@ public class AuthServices : IAuthServices
         {
             throw new GlobalException("Email is already in use");
         }
-        
+
         var existingUserName = await _userRepository.FindByNameAsync(request.UserName);
         if (existingUserName != null)
         {
             throw new GlobalException("Username is already in use");
         }
-        
+
         var user = new User
         {
-            UserName = request.UserName,
             FullName = request.FullName,
             Email = request.Email,
             PasswordHash = request.Password,
             AccountStatus = "Active",
-            UserRole = UserRole.User,
+            Role = UserRole.User.ToString(),
             EmailConfirmed = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        
+
         await _userRepository.CreateAsync(user, request.Password);
         await _userRepository.AddToRoleAsync(user, UserRole.User);
-        
+
         var token = await _authTokenProcess.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = WebUtility.UrlEncode(token);
         var backendUrl = UrlHelper.GetBackendUrl(_configuration);
 
-         var confirmationLink =
-             $"{backendUrl}/api/auth/confirm-email?userId={user.UserId}&token={encodedToken}";
+        var confirmationLink =
+            $"{backendUrl}/api/auth/confirm-email?userId={user.UserId}&token={encodedToken}";
 
         await _emailSender.SendEmailAsync(user.Email, "Verify your email", confirmationLink);
 
         return user;
     }
-    
+
     public async Task<LoginResponse?> Login(LoginRequest request)
     {
         var user = await _userRepository.FindByNameAsync(request.UserName);
@@ -146,26 +144,25 @@ public class AuthServices : IAuthServices
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
         var refreshToken = _authTokenProcess.GenerateRefreshToken();
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        
+
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = refreshTokenExpiry;
         await _userRepository.UpdateAsync(user);
-        
+
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expiry);
         _authTokenProcess.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", refreshToken, refreshTokenExpiry);
 
         return new LoginResponse
-        {   
+        {
             UserId = user.UserId,
-            UserName = user.UserName,
             Email = user.Email,
             FullName = user.FullName,
-            Role = user.UserRole,
+            Role = user.Role,
             RefreshToken = user.RefreshToken,
             RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
         };
     }
-    
+
     public async Task InitiatePasswordReset(string email)
     {
         var user = await _userRepository.FindByEmailAsync(email);
@@ -174,14 +171,14 @@ public class AuthServices : IAuthServices
             // To prevent email enumeration, do not reveal that the email does not exist
             return;
         }
-        
+
         if (!await _userRepository.IsEmailConfirmedAsync(user))
         {
             //* If email is not confirmed, resend confirmation email automatically
             await ResendEmailConfirmationAsync(user);
             throw new GlobalException("Your email is not verified. We've resent the verification link.");
         }
-        
+
         var token = await _authTokenProcess.GeneratePasswordTokenResetAsync(user);
         var redisKey = $"{RedisPrefix}:{token}";
 
@@ -195,7 +192,7 @@ public class AuthServices : IAuthServices
 
                 var resetLink =
                     $"{backendUrl}/api/auth/reset-password/verify?token={encodedToken}";
-                
+
                 await _emailSender.SendEmailAsync(user.Email, "Reset your password", resetLink);
             }
             else
@@ -209,14 +206,14 @@ public class AuthServices : IAuthServices
             throw new GlobalException("An error occurred while processing your request. Please try again later.");
         }
     }
-    
+
     public async Task<bool> VerifyPasswordResetToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
             return false;
         }
-        
+
         var redisKey = $"{RedisPrefix}:{token}";
         try
         {
@@ -279,7 +276,7 @@ public class AuthServices : IAuthServices
         user.RefreshToken = null;
         user.RefreshTokenExpiryTime = null;
         await _userRepository.UpdateAsync(user);
-        
+
         _authTokenProcess.DeleteAuthTokenCookie("ACCESS_TOKEN");
         _authTokenProcess.DeleteAuthTokenCookie("REFRESH_TOKEN");
     }

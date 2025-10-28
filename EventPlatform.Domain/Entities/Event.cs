@@ -5,13 +5,11 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class Event
 {
-    public Guid EventId { get; set; }
+    public int EventId { get; set; }
 
     public string Title { get; set; } = null!;
 
     public string Description { get; set; } = null!;
-
-    public string? ThumbnailUrl { get; set; }
 
     public DateTime StartTime { get; set; }
 
@@ -51,7 +49,7 @@ public partial class Event
 
     public string? AddressCity { get; set; }
 
-    public Guid? CategoryId { get; set; }
+    public int? CategoryId { get; set; }
 
     public virtual EventCategory? Category { get; set; }
 

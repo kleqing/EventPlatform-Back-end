@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using EventPlatform.Domain.Enums;
 
 namespace EventPlatform.Domain.Entities;
 
 public partial class User
 {
     public Guid UserId { get; set; }
-    
-    public string UserName { get; set; } = null!;
 
     public string FullName { get; set; } = null!;
 
@@ -20,7 +17,7 @@ public partial class User
 
     public string? PhoneNumber { get; set; }
 
-    public UserRole UserRole { get; set; } = UserRole.User;
+    public string Role { get; set; } = null!;
 
     public string AccountStatus { get; set; } = null!;
 
@@ -45,7 +42,7 @@ public partial class User
     public string? AddressDistrict { get; set; }
 
     public string? AddressCity { get; set; }
-    
+
     public bool EmailConfirmed { get; set; }
 
     public virtual ICollection<Connection> ConnectionReceivers { get; set; } = new List<Connection>();
@@ -64,5 +61,5 @@ public partial class User
 
     public virtual SpeakerProfile? SpeakerProfile { get; set; }
 
-    public virtual ICollection<UserInterest> UserInterests { get; set; } = new List<UserInterest>();
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
 }

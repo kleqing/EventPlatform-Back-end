@@ -5,11 +5,11 @@ namespace EventPlatform.Domain.Entities;
 
 public partial class ForumPost
 {
-    public Guid PostId { get; set; }
+    public int PostId { get; set; }
 
     public Guid UserId { get; set; }
 
-    public Guid CategoryId { get; set; }
+    public int CategoryId { get; set; }
 
     public string Title { get; set; } = null!;
 

@@ -2,7 +2,7 @@
 using EventPlatform.Application.Common;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Services.Interfaces.Auth;
-using EventPlatform.Domain.Entities;
+//using EventPlatform.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +13,7 @@ namespace EventPlatform.WebApi.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IAuthServices _authServices;
-    
+
     public UserController(IAuthServices authServices)
     {
         _authServices = authServices;
