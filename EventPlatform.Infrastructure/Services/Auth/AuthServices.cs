@@ -5,7 +5,6 @@ using EventPlatform.Application.Contracts.Responses;
 using EventPlatform.Application.Services.Interfaces.Auth;
 using EventPlatform.Application.Services.Interfaces.Email;
 using EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Enums;
 using EventPlatform.Domain.Interfaces;
 using EventPlatform.Shared.Exceptions;
 using EventPlatform.Shared.Utils;
@@ -56,7 +55,7 @@ public class AuthServices : IAuthServices
             {
                 Email = email,
                 FullName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value,
-                Role = UserRole.User.ToString(),
+                Role = "User",
                 AccountStatus = "Active",
                 EmailConfirmed = true,
                 CreatedAt = DateTime.UtcNow,
@@ -64,7 +63,7 @@ public class AuthServices : IAuthServices
             };
 
             await _userRepository.CreateAsync(user);
-            await _userRepository.AddToRoleAsync(user, UserRole.User);
+            await _userRepository.AddToRoleAsync(user, "User");
         }
 
         var (jwtToken, expiry) = _authTokenProcess.GenerateToken(user);
@@ -101,14 +100,14 @@ public class AuthServices : IAuthServices
             Email = request.Email,
             PasswordHash = request.Password,
             AccountStatus = "Active",
-            Role = UserRole.User.ToString(),
+            Role = "User",
             EmailConfirmed = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         await _userRepository.CreateAsync(user, request.Password);
-        await _userRepository.AddToRoleAsync(user, UserRole.User);
+        await _userRepository.AddToRoleAsync(user, "User");
 
         var token = await _authTokenProcess.GenerateEmailConfirmationTokenAsync(user);
         var encodedToken = WebUtility.UrlEncode(token);
@@ -124,7 +123,7 @@ public class AuthServices : IAuthServices
 
     public async Task<LoginResponse?> Login(LoginRequest request)
     {
-        var user = await _userRepository.FindByNameAsync(request.UserName);
+        var user = await _userRepository.FindByNameAsync(request.FullName);
         if (user == null)
         {
             throw new GlobalException("Invalid email or password");
