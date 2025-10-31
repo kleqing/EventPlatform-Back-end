@@ -88,11 +88,11 @@ public class AuthServices : IAuthServices
             throw new GlobalException("Email is already in use");
         }
 
-        var existingUserName = await _userRepository.FindByNameAsync(request.UserName);
-        if (existingUserName != null)
-        {
-            throw new GlobalException("Username is already in use");
-        }
+        // var existingUserName = await _userRepository.FindByNameAsync(request.FullName);
+        // if (existingUserName != null)
+        // {
+        //     throw new GlobalException("Username is already in use");
+        // }
 
         var user = new User
         {
