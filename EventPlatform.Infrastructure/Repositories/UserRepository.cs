@@ -1,5 +1,5 @@
-﻿using EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Interfaces;
+﻿using EventPlatform.Application.Interfaces;
+using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using EventPlatform.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
