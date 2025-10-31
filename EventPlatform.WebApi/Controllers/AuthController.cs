@@ -2,9 +2,9 @@
 using EventPlatform.Application.Common;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
+using EventPlatform.Application.Interfaces;
 using EventPlatform.Application.Services.Interfaces.Auth;
 using EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Interfaces;
 using EventPlatform.Shared.Exceptions;
 using EventPlatform.Shared.Utils;
 using Microsoft.AspNetCore.Authentication;

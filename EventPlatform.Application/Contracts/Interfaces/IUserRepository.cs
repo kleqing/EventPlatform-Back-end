@@ -1,6 +1,6 @@
 ﻿using EventPlatform.Domain.Entities;
 
-namespace EventPlatform.Domain.Interfaces;
+namespace EventPlatform.Application.Interfaces;
 
 public interface IUserRepository
 {
