@@ -19,6 +19,8 @@ public partial class ForumComment
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<ForumLike> ForumLikes { get; set; } = new List<ForumLike>();
+
     public virtual ICollection<ForumComment> InverseParentComment { get; set; } = new List<ForumComment>();
 
     public virtual ForumComment? ParentComment { get; set; }

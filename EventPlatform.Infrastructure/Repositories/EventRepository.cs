@@ -14,7 +14,7 @@ namespace EventPlatform.Infrastructure.Repositories
     public class EventRepository : IEventRepository
     {
         private readonly ApplicationDbContext _context;
-
+        
         public EventRepository(ApplicationDbContext context)
         {
             _context = context;
