@@ -25,5 +25,7 @@ public partial class ForumPost
 
     public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();
 
+    public virtual ICollection<ForumLike> ForumLikes { get; set; } = new List<ForumLike>();
+
     public virtual User User { get; set; } = null!;
 }

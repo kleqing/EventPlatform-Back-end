@@ -26,10 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\EventPlatform.Application\EventPlatform.Application.csproj" />
       <ProjectReference Include="..\EventPlatform.Domain\EventPlatform.Domain.csproj" />
       <ProjectReference Include="..\EventPlatform.Shared\EventPlatform.Shared.csproj" />
