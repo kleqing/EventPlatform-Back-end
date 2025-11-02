@@ -1,13 +1,8 @@
 ﻿using EventPlatform.Application.Contracts.Dtos;
-using EventPlatform.Application.Interfaces;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EventPlatform.Infrastructure.Repositories
 {
@@ -120,6 +115,13 @@ namespace EventPlatform.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
 
             return eventDetail;
+        }
+        
+        
+        public async Task CreateAsync(Event e)
+        {
+            await _context.Events.AddAsync(e);
+            await _context.SaveChangesAsync();
         }
     } 
 }

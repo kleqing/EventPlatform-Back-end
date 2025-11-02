@@ -6,11 +6,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EventPlatform.Application.Interfaces
+namespace EventPlatform.Application.Contracts.Interfaces
 {
     public interface IEventRepository
     {
         Task<PaginatedResult<EventSummaryDto>> GetEventsAsync(EventQueryParameters query);
         Task<EventDetailDto?> GetEventByIdAsync(int eventId);
+        Task CreateAsync(Event e);
     }
 }

@@ -1,5 +1,5 @@
 ﻿using EventPlatform.Domain.Entities;
-using EventPlatform.Domain.Interfaces;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Infrastructure.Data;
 
 namespace EventPlatform.Infrastructure.Repositories
