@@ -28,6 +28,8 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<ForumComment> ForumComments { get; set; }
 
+    public virtual DbSet<ForumLike> ForumLikes { get; set; }
+
     public virtual DbSet<ForumPost> ForumPosts { get; set; }
 
     public virtual DbSet<Registration> Registrations { get; set; }
@@ -41,6 +43,10 @@ public partial class ApplicationDbContext : DbContext
     public virtual DbSet<Transaction> Transactions { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=db8300.public.databaseasp.net; Database=db8300; User Id=db8300; Password=3i!Em@Y5_8bH; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -224,6 +230,22 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ForumComm__UserI__1332DBDC");
+        });
+
+        modelBuilder.Entity<ForumLike>(entity =>
+        {
+            entity.HasKey(e => e.LikeId).HasName("PK__ForumLik__A2922C146C5F29B7");
+
+            entity.Property(e => e.LikeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+
+            entity.HasOne(d => d.Comment).WithMany(p => p.ForumLikes)
+                .HasForeignKey(d => d.CommentId)
+                .HasConstraintName("FK_ForumLikes_Comments");
+
+            entity.HasOne(d => d.Post).WithMany(p => p.ForumLikes)
+                .HasForeignKey(d => d.PostId)
+                .HasConstraintName("FK_ForumLikes_Posts");
         });
 
         modelBuilder.Entity<ForumPost>(entity =>
