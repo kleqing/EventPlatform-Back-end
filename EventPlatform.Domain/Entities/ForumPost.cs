@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EventPlatform.Domain.Entities;
 
@@ -21,6 +22,12 @@ public partial class ForumPost
 
     public DateTime? UpdatedAt { get; set; }
 
+    [NotMapped]
+    public int LikeCount { get; set; }
+    
+    [NotMapped]
+    public int CommentCount { get; set; }
+    
     public virtual ForumCategory Category { get; set; } = null!;
 
     public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();

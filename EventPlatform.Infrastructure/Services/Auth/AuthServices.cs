@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Security.Claims;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
 using EventPlatform.Application.Interfaces;

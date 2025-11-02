@@ -1,4 +1,4 @@
-﻿using EventPlatform.Application.Interfaces;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using EventPlatform.Shared.Exceptions;

@@ -1,5 +1,4 @@
-﻿
-using EventPlatform.Application.Services.Interfaces.ServiceEvent;
+﻿using EventPlatform.Application.Services.Interfaces.ServiceEvent;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Domain.Interfaces;
 
@@ -16,7 +15,7 @@ namespace EventPlatform.Infrastructure.Services.ServiceEvent
             _ticketTypeRepository = ticketTypeRepository;
             _eventCategoryRepository = eventCategoryRepository;
         }
-        public async Task CreateEvent(Event e)
+        public async Task CreateEvent(Domain.Entities.Event e)
         {
             await _eventRepository.CreateAsync(e);
         }
