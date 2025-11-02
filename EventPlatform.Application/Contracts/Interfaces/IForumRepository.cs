@@ -1,7 +1,7 @@
 ﻿using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Domain.Entities;
 
-namespace EventPlatform.Application.Interfaces;
+namespace EventPlatform.Application.Contracts.Interfaces;
 
 public interface IForumRepository
 {

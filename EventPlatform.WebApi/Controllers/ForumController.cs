@@ -1,6 +1,6 @@
 ﻿using EventPlatform.Application.Common;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
-using EventPlatform.Application.Interfaces;
 using EventPlatform.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 

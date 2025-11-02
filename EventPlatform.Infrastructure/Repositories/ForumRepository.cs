@@ -1,5 +1,5 @@
-﻿using EventPlatform.Application.Contracts.Requests;
-using EventPlatform.Application.Interfaces;
+﻿using EventPlatform.Application.Contracts.Interfaces;
+using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

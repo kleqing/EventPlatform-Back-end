@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using EventPlatform.Application.Common;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
-using EventPlatform.Application.Interfaces;
 using EventPlatform.Application.Services.Interfaces.Auth;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Shared.Exceptions;
