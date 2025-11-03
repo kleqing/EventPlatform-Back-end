@@ -123,5 +123,10 @@ namespace EventPlatform.Infrastructure.Repositories
             await _context.Events.AddAsync(e);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<Event>> GetSpeakerEvents(Guid userId)
+        {
+            return await _context.Events.Where(e => e.CreatedByUserId == userId).ToListAsync();
+        }
     } 
 }
