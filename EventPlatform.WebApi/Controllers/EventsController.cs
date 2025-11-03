@@ -113,5 +113,34 @@ namespace EventPlatform.WebApi.Controllers
             }
 
         }
+
+        [HttpGet("getSpeakerEvents")]
+        public async Task<ActionResult> GetSpeakerEvents()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return BadRequest();
+            var userGuidId = Guid.Parse(userId);
+            if (userGuidId == Guid.Empty) return BadRequest();
+
+            try
+            {
+                var events = await _eventService.GetSpeakerEvents(userGuidId);
+                var eventsDto = events.Select(e => new MyEventDto
+                {
+                    EventId = e.EventId,
+                    Description = e.Description,
+                    CoverImageUrl = e.CoverImageUrl,
+                    Title = e.Title,
+                    TotalSeats = e.TicketTypes.Sum(t => t.Quantity),
+                    StartTime = e.StartTime,
+                    Location = e.VenueName,
+                }).ToList(); 
+                return Ok(eventsDto);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
     }
 }

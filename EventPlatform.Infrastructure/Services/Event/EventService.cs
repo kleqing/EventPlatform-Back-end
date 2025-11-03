@@ -1,7 +1,7 @@
 ﻿using EventPlatform.Application.Contracts.Dtos;
 using EventPlatform.Application.Services.Interfaces.Event;
-using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
+using EventPlatform.Application.Contracts.Interfaces;
 
 namespace EventPlatform.Infrastructure.Services.Event
 {
@@ -45,5 +45,11 @@ namespace EventPlatform.Infrastructure.Services.Event
             return await _eventCategoryRepository.GetAllEventCategories();
             
         }
+        public async Task<IEnumerable<Domain.Entities.Event>> GetSpeakerEvents(Guid userId)
+        {
+            return await _eventRepository.GetSpeakerEvents(userId);   
+        }
+
+
     }
 }
