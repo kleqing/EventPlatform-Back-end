@@ -16,5 +16,6 @@ namespace EventPlatform.Application.Services.Interfaces.Event
         Task CreateTicketTypes(List<TicketType> t);
         Task<IEnumerable<EventCategory>> GetAllEventCategories();
         Task<IEnumerable<Domain.Entities.Event>> GetSpeakerEvents(Guid userId);
+        Task<AppliedEventsGroupedDto> GetAppliedEventsAsync(Guid userId);
     }
 }
