@@ -229,6 +229,62 @@ public class AuthController : ControllerBase
         }
     }
 
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var response = new BaseResultResponse<string>();
+
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                response.StatusCode = StatusCodes.Status401Unauthorized;
+                response.Success = false;
+                response.Message = "User not found in token.";
+                response.Data = null;
+                return StatusCode(StatusCodes.Status401Unauthorized, response);
+            }
+
+            var user = await _userRepository.FindByIdAsync(userId);
+            if (user == null)
+            {
+                response.StatusCode = StatusCodes.Status404NotFound;
+                response.Success = false;
+                response.Message = "User not found.";
+                response.Data = null;
+                return NotFound(response);
+            }
+
+            await _authorizeServices.ChangePasswordAsync(user, request);
+
+            response.StatusCode = StatusCodes.Status200OK;
+            response.Success = true;
+            response.Message = "Password changed successfully.";
+            response.Data = null;
+            return Ok(response);
+        }
+        catch (GlobalException e)
+        {
+            response.StatusCode = StatusCodes.Status400BadRequest;
+            response.Success = false;
+            response.Message = e.Message;
+            response.Errors = new List<string> { e.Message };
+            response.Data = null;
+            return BadRequest(response);
+        }
+        catch (Exception e)
+        {
+            response.StatusCode = StatusCodes.Status500InternalServerError;
+            response.Success = false;
+            response.Message = "An error occurred while processing your request.";
+            response.Errors = new List<string> { e.Message };
+            response.Data = null;
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
+    }
+
     [HttpPost("resend-confirmation")]
     public async Task<IActionResult> ResendEmailConfirmation(string email)
     {

@@ -25,7 +25,7 @@ public class AuthTokenProcess : IAuthTokenProcess
         _env = env;
     }
 
-    public (string Token, DateTime Expiry) GenerateToken(User user)
+    public (string Token, DateTime Expiry) GenerateToken(EventPlatform.Domain.Entities.User user)
     {
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
@@ -70,16 +70,16 @@ public class AuthTokenProcess : IAuthTokenProcess
         context?.Response.Cookies.Delete(key);
     }
 
-    public Task<string> GenerateEmailConfirmationTokenAsync(User user)
+    public Task<string> GenerateEmailConfirmationTokenAsync(EventPlatform.Domain.Entities.User user)
         => Task.FromResult(GenerateTokenWithPurpose(user, "email_confirmation", TimeSpan.FromHours(24)));
 
-    public Task<string> GeneratePasswordTokenResetAsync(User user)
+    public Task<string> GeneratePasswordTokenResetAsync(EventPlatform.Domain.Entities.User user)
     {
         var token = GenerateRefreshToken();
         return Task.FromResult(token);
     }
 
-    private string GenerateTokenWithPurpose(User user, string purpose, TimeSpan lifetime)
+    private string GenerateTokenWithPurpose(EventPlatform.Domain.Entities.User user, string purpose, TimeSpan lifetime)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -102,7 +102,7 @@ public class AuthTokenProcess : IAuthTokenProcess
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public bool ValidateEmailConfirmationToken(User user, string token)
+    public bool ValidateEmailConfirmationToken(EventPlatform.Domain.Entities.User user, string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_jwt.Secret);

@@ -1,4 +1,4 @@
-﻿namespace EventPlatform.Application.Contracts.Requests;
+namespace EventPlatform.Application.Contracts.Requests;
 
 public class ChangePasswordRequest
 {
