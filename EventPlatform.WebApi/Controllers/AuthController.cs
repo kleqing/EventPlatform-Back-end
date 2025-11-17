@@ -51,16 +51,15 @@ public class AuthController : ControllerBase
         }
 
         var claimsPrincipal = result.Principal;
-        await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
-        var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
-                   claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
-        var avatar = claimsPrincipal.FindFirst("picture")?.Value ?? string.Empty;
+        var user = await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var frontendUrl =
-            $"{returnUrl}?email={Uri.EscapeDataString(email)}&name={Uri.EscapeDataString(name)}&avatar={Uri.EscapeDataString(avatar)}";
-        return Redirect(frontendUrl);
+        if (user == null)
+        {
+            return RedirectToAction("Login", "Auth", new { error = "GoogleLoginFailed" });
+        }
+    
+        return Redirect(returnUrl);
     }
 
     [AllowAnonymous]
