@@ -1,10 +1,10 @@
-﻿using EventPlatform.Application.Contracts.Interfaces;
+﻿using EventPlatform.Application.Contracts.Dtos;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Services.Interfaces.Users;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Events = EventPlatform.Domain.Entities.Event;
 
 namespace EventPlatform.Infrastructure.Services.Users;
 
@@ -55,7 +55,7 @@ public class UserService : IUserService
         return updatedUser; 
     }
 
-    public async Task<List<Events>> ListAppliedUserEventThisMonth(Guid userId)
+    public async Task<List<EventDto>> ListAppliedUserEventThisMonth(Guid userId)
     {
         var now = DateTime.Now;
 
@@ -63,20 +63,41 @@ public class UserService : IUserService
             .Where(r => r.UserId == userId)
             .Select(r => r.TicketType.Event)
             .Where(e => e.StartTime.Month == now.Month && e.StartTime.Year == now.Year)
+            .Select(e => new EventDto
+            {
+                EventId = e.EventId,
+                Title = e.Title,
+                StartTime = e.StartTime,
+                EndTime = e.EndTime,
+                EventType = e.EventType,
+                Location = e.Location,
+                OnlineUrl = e.OnlineUrl,
+                CardImageUrl = e.CardImageUrl,
+                Description = e.Description
+            })
             .ToListAsync();
 
         return events;
     }
     
-    public async Task<SpeakerProfile?> GetSpeakerProfileByUserId(Guid userId)
+    public async Task<SpeakerProfileDto?> GetSpeakerProfileByUserId(Guid userId)
     {
-        var speakerProfile = await _context.SpeakerProfiles
-            .FirstOrDefaultAsync(sp => sp.UserId == userId);
+        var sp = await _context.SpeakerProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
+        if (sp == null) return null;
 
-        return speakerProfile;
+        return new SpeakerProfileDto
+        {
+            Bio = sp.Bio,
+            Topics = sp.Topics,
+            Company = sp.Company,
+            JobTitle = sp.JobTitle,
+            ApprovalStatus = sp.ApprovalStatus,
+            WebsiteUrl = sp.WebsiteUrl,
+            LinkedInUrl = sp.LinkedInUrl,
+        };
     }
     
-    public async Task<SpeakerProfile?> UpdateSpeakerProfile(Guid userId, SpeakerProfile request)
+    public async Task<SpeakerProfile?> UpdateSpeakerProfile(Guid userId, UpdateSpeakerProfileRequest request)
     {
         var existingProfile = await _context.SpeakerProfiles
             .FirstOrDefaultAsync(sp => sp.UserId == userId);
@@ -100,5 +121,38 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
 
         return existingProfile;
+    }
+    
+    public async Task<List<EventDto>> ListRecommendedEventsForUser(Guid userId)
+    {
+        var recommendedEvents = await _context.Events
+            .OrderByDescending(e => e.StartTime)
+            .Take(5)
+            .Select(e => new EventDto
+            {
+                EventId = e.EventId,
+                Title = e.Title,
+                StartTime = e.StartTime,
+                EndTime = e.EndTime,
+                EventType = e.EventType,
+                Location = e.Location,
+                OnlineUrl = e.OnlineUrl,
+                CardImageUrl = e.CardImageUrl,
+                Description = e.Description
+            })
+            .ToListAsync();
+
+        return recommendedEvents;
+    }
+    
+    public async Task<List<User>> ListRecommendPartnersForUser(Guid userId)
+    {
+        var recommendedPartners = await _context.Users
+            .Where(u => u.UserId != userId)
+            .OrderBy(u => Guid.NewGuid())
+            .Take(5)
+            .ToListAsync();
+
+        return recommendedPartners;
     }
 }

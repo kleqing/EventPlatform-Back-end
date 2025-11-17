@@ -120,6 +120,78 @@ public class UserController : ControllerBase
             return StatusCode(500, response);
         }
     }
+
+    [Authorize]
+    [HttpGet("applied-events-this-month")]
+    public async Task<IActionResult> GetAppliedEventsThisMonth()
+    {
+        var response = new BaseResultResponse<List<EventDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+
+        var events = await _userService.ListAppliedUserEventThisMonth(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Applied events retrieved successfully.";
+        response.Data = events;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpGet("speaker-profile")]
+    public async Task<IActionResult> GetSpeakerProfile()
+    {
+        var response = new BaseResultResponse<SpeakerProfileDto>();
+        
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var speakerProfile =  await _userService.GetSpeakerProfileByUserId(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Speaker profile retrieved successfully.";
+        response.Data = speakerProfile;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpPut("update-speaker-profile")]
+    public async Task<IActionResult> UpdateSpeakerProfile([FromBody] UpdateSpeakerProfileRequest request)
+    {
+        var response = new BaseResultResponse<SpeakerProfile>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var updatedProfile = await _userService.UpdateSpeakerProfile(user.UserId, request);
+        if (updatedProfile == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "Speaker profile not found.";
+            return NotFound(response);
+        }
+        else
+        {
+            response.StatusCode = 200;
+            response.Message = "Speaker profile updated successfully.";
+            response.Data = updatedProfile;
+            return Ok(response);
+        }
+    }
     
     
 }
