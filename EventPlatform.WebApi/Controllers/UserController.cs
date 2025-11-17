@@ -51,7 +51,8 @@ public class UserController : ControllerBase
             AddressDistrict = user.AddressDistrict,
             AddressCity = user.AddressCity,
             RefreshToken = user.RefreshToken,
-            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
+            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime,
+            AvatarUrl = user.AvatarUrl
         };
 
         return Ok(userDto);
@@ -192,6 +193,44 @@ public class UserController : ControllerBase
             return Ok(response);
         }
     }
-    
-    
+
+    [Authorize]
+    [HttpGet("recommended-events")]
+    public async Task<IActionResult> GetRecommendedEvents()
+    {
+        var response = new BaseResultResponse<List<EventDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var events = await _userService.ListRecommendedEventsForUser(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Recommended events retrieved successfully.";
+        response.Data = events;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpGet("recommended-partners")]
+    public async Task<IActionResult> GetRecommendedPartners()
+    {
+        var response = new BaseResultResponse<List<UserDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var partners = await _userService.ListRecommendPartnersForUser(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Recommended partners retrieved successfully.";
+        response.Data = partners;
+        return Ok(response);
+    }
 }

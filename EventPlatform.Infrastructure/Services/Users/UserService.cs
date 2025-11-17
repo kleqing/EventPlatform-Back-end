@@ -145,14 +145,21 @@ public class UserService : IUserService
         return recommendedEvents;
     }
     
-    public async Task<List<User>> ListRecommendPartnersForUser(Guid userId)
+    public async Task<List<UserDto>> ListRecommendPartnersForUser(Guid userId)
     {
         var recommendedPartners = await _context.Users
             .Where(u => u.UserId != userId)
             .OrderBy(u => Guid.NewGuid())
             .Take(5)
             .ToListAsync();
-
-        return recommendedPartners;
+        
+        var recommendedPartnerDtos = recommendedPartners.Select(u => new UserDto
+        {
+            UserId = u.UserId,
+            FullName = u.FullName,
+            AvatarUrl = u.AvatarUrl,
+            AddressCity = u.AddressCity
+        }).ToList();
+        return recommendedPartnerDtos;
     }
 }

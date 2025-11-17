@@ -12,5 +12,5 @@ public interface IUserService
     Task<SpeakerProfileDto?> GetSpeakerProfileByUserId(Guid userId);
     Task<SpeakerProfile?> UpdateSpeakerProfile(Guid userId, UpdateSpeakerProfileRequest request);
     Task<List<EventDto>> ListRecommendedEventsForUser(Guid userId);
-    Task<List<User>> ListRecommendPartnersForUser(Guid userId);
+    Task<List<UserDto>> ListRecommendPartnersForUser(Guid userId);
 }
