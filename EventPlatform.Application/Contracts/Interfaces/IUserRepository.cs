@@ -16,4 +16,5 @@ public interface IUserRepository
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<bool> IsEmailConfirmedAsync(User user);
     Task<User?> ResetPasswordAsync(User user, string newPassword);
+    Task<User?> ChangePasswordAsync(User user, string newPassword);
 }
