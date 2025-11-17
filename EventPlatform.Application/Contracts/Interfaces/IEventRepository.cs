@@ -14,5 +14,6 @@ namespace EventPlatform.Application.Contracts.Interfaces
         Task<EventDetailDto?> GetEventByIdAsync(int eventId);
         Task CreateAsync(Event e);
         Task<IEnumerable<Domain.Entities.Event>> GetSpeakerEvents(Guid userId);
+        Task<IEnumerable<Domain.Entities.Event>> GetAppliedEventsAsync(Guid userId);
     }
 }

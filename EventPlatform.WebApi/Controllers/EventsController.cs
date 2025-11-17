@@ -1,4 +1,6 @@
-﻿using System.Security.Claims;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
+using EventPlatform.Application.Common;
 using EventPlatform.Application.Contracts.Dtos;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Services.Interfaces.Event;
@@ -42,7 +44,7 @@ namespace EventPlatform.WebApi.Controllers
 
             return Ok(result);
         }
-        
+
         [Authorize]
         [HttpPost("create")]
         public async Task<ActionResult> CreateEvent([FromBody] CreateEventRequest createEventRequest)
@@ -50,9 +52,9 @@ namespace EventPlatform.WebApi.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return BadRequest();
             var userGuidId = Guid.Parse(userId);
-            if(userGuidId == Guid.Empty) return BadRequest();
+            if (userGuidId == Guid.Empty) return BadRequest();
             var createEventDto = createEventRequest.createEventDto;
-            var createTicketTypeList = createEventRequest.createTicketTypeList;   
+            var createTicketTypeList = createEventRequest.createTicketTypeList;
             var newEvent = new Event
             {
                 Title = createEventDto.Title,
@@ -109,7 +111,7 @@ namespace EventPlatform.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex); 
+                return BadRequest(ex);
             }
 
         }
@@ -134,12 +136,49 @@ namespace EventPlatform.WebApi.Controllers
                     TotalSeats = e.TicketTypes.Sum(t => t.Quantity),
                     StartTime = e.StartTime,
                     Location = e.VenueName,
-                }).ToList(); 
+                }).ToList();
                 return Ok(eventsDto);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex);
+            }
+        }
+
+        [Authorize]
+        [HttpGet("applied")]
+        public async Task<IActionResult> GetAppliedEvents()
+        {
+            var response = new BaseResultResponse<AppliedEventsGroupedDto>();
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    response.StatusCode = StatusCodes.Status401Unauthorized;
+                    response.Success = false;
+                    response.Message = "User not found in token.";
+                    return StatusCode(StatusCodes.Status401Unauthorized, response);
+                }
+
+                var userGuidId = Guid.Parse(userId);
+                var appliedEvents = await _eventService.GetAppliedEventsAsync(userGuidId);
+
+                response.StatusCode = StatusCodes.Status200OK;
+                response.Success = true;
+                response.Message = "Applied events retrieved successfully.";
+                response.Data = appliedEvents;
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = StatusCodes.Status500InternalServerError;
+                response.Success = false;
+                response.Message = "An error occurred while processing your request.";
+                response.Errors = new List<string> { ex.Message };
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
         }
     }
