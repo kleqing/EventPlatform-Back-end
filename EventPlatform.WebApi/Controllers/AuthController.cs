@@ -112,30 +112,37 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    // File: EventPlatform.WebApi/Controllers/AuthController.cs
+
     [AllowAnonymous]
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
+        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
+    
+        var failureRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail=";
+
         var user = await _userRepository.FindByIdAsync(userId);
         if (user == null)
         {
-            return BadRequest("Invalid user ID.");
+            return Redirect(failureRedirectUrl);
         }
 
         var isValid = _authTokenProcess.ValidateEmailConfirmationToken(user, token);
         if (!isValid)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl); 
         }
 
         var confirmedUser = await _userRepository.ConfirmEmailAsync(user);
         if (confirmedUser == null)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl);
         }
 
-        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
-        return Redirect($"{frontendUrl}/verify-success?verifiedEmail={Uri.EscapeDataString(user.Email)}");
+        var successRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail={Uri.EscapeDataString(user.Email)}";
+    
+        return Redirect(successRedirectUrl);
     }
 
     [AllowAnonymous]
