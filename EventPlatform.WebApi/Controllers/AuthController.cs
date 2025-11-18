@@ -51,16 +51,15 @@ public class AuthController : ControllerBase
         }
 
         var claimsPrincipal = result.Principal;
-        await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
-        var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
-                   claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
-        var avatar = claimsPrincipal.FindFirst("picture")?.Value ?? string.Empty;
+        var user = await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var frontendUrl =
-            $"{returnUrl}?email={Uri.EscapeDataString(email)}&name={Uri.EscapeDataString(name)}&avatar={Uri.EscapeDataString(avatar)}";
-        return Redirect(frontendUrl);
+        if (user == null)
+        {
+            return RedirectToAction("Login", "Auth", new { error = "GoogleLoginFailed" });
+        }
+    
+        return Redirect(returnUrl);
     }
 
     [AllowAnonymous]
@@ -113,30 +112,37 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    // File: EventPlatform.WebApi/Controllers/AuthController.cs
+
     [AllowAnonymous]
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
+        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
+    
+        var failureRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail=";
+
         var user = await _userRepository.FindByIdAsync(userId);
         if (user == null)
         {
-            return BadRequest("Invalid user ID.");
+            return Redirect(failureRedirectUrl);
         }
 
         var isValid = _authTokenProcess.ValidateEmailConfirmationToken(user, token);
         if (!isValid)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl); 
         }
 
         var confirmedUser = await _userRepository.ConfirmEmailAsync(user);
         if (confirmedUser == null)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl);
         }
 
-        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
-        return Redirect($"{frontendUrl}/verify-success?verifiedEmail={Uri.EscapeDataString(user.Email)}");
+        var successRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail={Uri.EscapeDataString(user.Email)}";
+    
+        return Redirect(successRedirectUrl);
     }
 
     [AllowAnonymous]

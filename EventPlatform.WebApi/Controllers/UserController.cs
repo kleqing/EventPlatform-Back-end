@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using EventPlatform.Application.Common;
 using EventPlatform.Application.Contracts.Dtos;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Services.Interfaces.Auth;
-using EventPlatform.Application.Services.Interfaces.User;
+using EventPlatform.Application.Services.Interfaces.Users;
+using EventPlatform.Domain.Entities;
 using EventPlatform.Shared.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,120 +18,219 @@ public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly IAuthServices _authServices;
+    private readonly IUserRepository _userRepository;
 
-
-    public UserController(IAuthServices authServices, IUserService userService)
+    public UserController(IAuthServices authServices, IUserRepository userRepository, IUserService userService)
     {
         _authServices = authServices;
+        _userRepository = userRepository;
         _userService = userService;
     }
 
     //* Don't delete this action, it's used to response to the client that is the user is logged in
     [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public async Task<IActionResult> Me()
     {
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-        return Ok(new { email = userEmail });
+        
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+
+        if (user == null)
+            return Unauthorized();
+
+        var userDto = new UserDto
+        {
+            UserId = user.UserId,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role,
+            PhoneNumber = user.PhoneNumber ?? string.Empty,
+            DateOfBirth = user.DateOfBirth,
+            AddressWard = user.AddressWard,
+            AddressDistrict = user.AddressDistrict,
+            AddressCity = user.AddressCity,
+            RefreshToken = user.RefreshToken,
+            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime,
+            AvatarUrl = user.AvatarUrl
+        };
+
+        return Ok(userDto);
     }
 
     [Authorize]
-    [HttpGet("profile")]
-    public async Task<IActionResult> GetProfile()
-    {
-        var response = new BaseResultResponse<UserProfileDto>();
-
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                response.StatusCode = StatusCodes.Status401Unauthorized;
-                response.Success = false;
-                response.Message = "User not found in token.";
-                response.Data = null;
-                return StatusCode(StatusCodes.Status401Unauthorized, response);
-            }
-
-            var profile = await _userService.GetProfileAsync(userId);
-            response.StatusCode = StatusCodes.Status200OK;
-            response.Success = true;
-            response.Message = "Profile retrieved successfully.";
-            response.Data = profile;
-            return Ok(response);
-        }
-        catch (GlobalException e)
-        {
-            response.StatusCode = StatusCodes.Status400BadRequest;
-            response.Success = false;
-            response.Message = e.Message;
-            response.Errors = new List<string> { e.Message };
-            response.Data = null;
-            return BadRequest(response);
-        }
-        catch (Exception e)
-        {
-            response.StatusCode = StatusCodes.Status500InternalServerError;
-            response.Success = false;
-            response.Message = "An error occurred while processing your request.";
-            response.Errors = new List<string> { e.Message };
-            response.Data = null;
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
-        }
-    }
-
-    [Authorize]
-    [HttpPut("profile")]
+    [HttpPut("update-profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileRequest request)
     {
-        var response = new BaseResultResponse<UserProfileDto>();
-
-        if (!ModelState.IsValid)
-        {
-            response.StatusCode = StatusCodes.Status400BadRequest;
-            response.Success = false;
-            response.Message = "Invalid profile data.";
-            response.Errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            response.Data = null;
-            return BadRequest(response);
-        }
-
+        var response = new BaseResultResponse<User>();
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            var user = await _userRepository.FindByEmailAsync(userEmail);
+
+            if (user == null)
             {
-                response.StatusCode = StatusCodes.Status401Unauthorized;
-                response.Success = false;
-                response.Message = "User not found in token.";
-                response.Data = null;
-                return StatusCode(StatusCodes.Status401Unauthorized, response);
+                response.StatusCode = 404;
+                response.Message = "User not found.";
+                return NotFound(response);
             }
 
-            var profile = await _userService.UpdateProfileAsync(userId, request);
-            response.StatusCode = StatusCodes.Status200OK;
-            response.Success = true;
-            response.Message = "Profile updated successfully.";
-            response.Data = profile;
+            var updatedUser = await _userService.UpdateUserProfile(user.UserId, request);
+
+            response.StatusCode = 200;
+            response.Message = "User profile updated successfully.";
+            response.Data = updatedUser;
             return Ok(response);
         }
-        catch (GlobalException e)
+        catch (Exception ex)
         {
-            response.StatusCode = StatusCodes.Status400BadRequest;
-            response.Success = false;
-            response.Message = e.Message;
-            response.Errors = new List<string> { e.Message };
-            response.Data = null;
-            return BadRequest(response);
+            response.StatusCode = 500;
+            response.Message = "An error occurred while updating the user profile.";
+            return StatusCode(500, response);
         }
-        catch (Exception e)
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var response = new BaseResultResponse<User>();
+        try
         {
-            response.StatusCode = StatusCodes.Status500InternalServerError;
-            response.Success = false;
-            response.Message = "An error occurred while processing your request.";
-            response.Errors = new List<string> { e.Message };
-            response.Data = null;
-            return StatusCode(StatusCodes.Status500InternalServerError, response);
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var user = await _userRepository.FindByEmailAsync(userEmail);
+
+            if (user == null)
+            {
+                response.StatusCode = 404;
+                response.Message = "User not found.";
+                return NotFound(response);
+            }
+
+            var updatePassword = await _userService.ChangePassword(user.UserId, request);
+            response.StatusCode = 200;
+            response.Message = "Password changed successfully.";
+            response.Data = updatePassword;
+            return Ok(response);
         }
+        catch (Exception ex)
+        {
+            response.StatusCode = 500;
+            response.Message = "An error occurred while changing the password.";
+            return StatusCode(500, response);
+        }
+    }
+
+    [Authorize]
+    [HttpGet("applied-events-this-month")]
+    public async Task<IActionResult> GetAppliedEventsThisMonth()
+    {
+        var response = new BaseResultResponse<List<EventDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+
+        var events = await _userService.ListAppliedUserEventThisMonth(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Applied events retrieved successfully.";
+        response.Data = events;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpGet("speaker-profile")]
+    public async Task<IActionResult> GetSpeakerProfile()
+    {
+        var response = new BaseResultResponse<SpeakerProfileDto>();
+        
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var speakerProfile =  await _userService.GetSpeakerProfileByUserId(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Speaker profile retrieved successfully.";
+        response.Data = speakerProfile;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpPut("update-speaker-profile")]
+    public async Task<IActionResult> UpdateSpeakerProfile([FromBody] UpdateSpeakerProfileRequest request)
+    {
+        var response = new BaseResultResponse<SpeakerProfile>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var updatedProfile = await _userService.UpdateSpeakerProfile(user.UserId, request);
+        if (updatedProfile == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "Speaker profile not found.";
+            return NotFound(response);
+        }
+        else
+        {
+            response.StatusCode = 200;
+            response.Message = "Speaker profile updated successfully.";
+            response.Data = updatedProfile;
+            return Ok(response);
+        }
+    }
+
+    [Authorize]
+    [HttpGet("recommended-events")]
+    public async Task<IActionResult> GetRecommendedEvents()
+    {
+        var response = new BaseResultResponse<List<EventDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var events = await _userService.ListRecommendedEventsForUser(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Recommended events retrieved successfully.";
+        response.Data = events;
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpGet("recommended-partners")]
+    public async Task<IActionResult> GetRecommendedPartners()
+    {
+        var response = new BaseResultResponse<List<UserDto>>();
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        var user = await _userRepository.FindByEmailAsync(userEmail);
+        if (user == null)
+        {
+            response.StatusCode = 404;
+            response.Message = "User not found.";
+            return NotFound(response);
+        }
+        var partners = await _userService.ListRecommendPartnersForUser(user.UserId);
+        response.StatusCode = 200;
+        response.Message = "Recommended partners retrieved successfully.";
+        response.Data = partners;
+        return Ok(response);
     }
 }
