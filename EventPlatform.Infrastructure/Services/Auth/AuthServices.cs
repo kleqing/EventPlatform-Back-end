@@ -260,12 +260,12 @@ public class AuthServices : IAuthServices
 
         if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
             string.IsNullOrWhiteSpace(request.NewPassword) ||
-            string.IsNullOrWhiteSpace(request.ConfirmPassword))
+            string.IsNullOrWhiteSpace(request.ConfirmNewPassword))
         {
             throw new GlobalException("All password fields are required");
         }
 
-        if (request.NewPassword != request.ConfirmPassword)
+        if (request.NewPassword != request.ConfirmNewPassword)
         {
             throw new GlobalException("New password and confirmation do not match");
         }
