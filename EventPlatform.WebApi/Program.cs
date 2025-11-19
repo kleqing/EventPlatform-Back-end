@@ -1,6 +1,3 @@
-using System.Reflection;
-using System.Text;
-using System.Text.Json;
 using dotenv.net;
 using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Services.Interfaces.Email;
@@ -12,10 +9,14 @@ using EventPlatform.Shared.Utils;
 using EventPlatform.WebApi.Hubs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
 
 namespace EventPlatform.WebApi;
 
@@ -167,7 +168,10 @@ public class Program
             options.AddPolicy("AllowAll",
                 policy =>
                 {
-                    policy.WithOrigins("https://localhost:7105")
+                    policy.WithOrigins(
+                        "https://localhost:7105",
+                        "https://eventplatform-fe.runasp.net"
+                        )
                         .AllowCredentials()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
@@ -254,7 +258,10 @@ public class Program
 
         app.UseRouting();
         app.UseCors("AllowAll");
-
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
         app.UseAuthentication();
         app.UseAuthorization();
 
