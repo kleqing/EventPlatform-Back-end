@@ -1,5 +1,11 @@
-﻿using EventPlatform.Application.Contracts.Dtos;
+﻿using System.Collections.Generic;
+using System.Security.Claims;
+using EventPlatform.Application.Common;
+using EventPlatform.Application.Contracts.Dtos;
+using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Services.Interfaces.Event;
+using EventPlatform.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,6 +43,143 @@ namespace EventPlatform.WebApi.Controllers
             }
 
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("create")]
+        public async Task<ActionResult> CreateEvent([FromBody] CreateEventRequest createEventRequest)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return BadRequest();
+            var userGuidId = Guid.Parse(userId);
+            if (userGuidId == Guid.Empty) return BadRequest();
+            var createEventDto = createEventRequest.createEventDto;
+            var createTicketTypeList = createEventRequest.createTicketTypeList;
+            var newEvent = new Event
+            {
+                Title = createEventDto.Title,
+                Description = createEventDto.Description,
+                StartTime = createEventDto.StartTime,
+                EndTime = createEventDto.EndTime,
+                EventType = createEventDto.EventType,
+                Location = createEventDto.Location,
+                OnlineUrl = createEventDto.OnlineUrl ?? null,
+                EventStatus = createEventDto.EventStatus,
+                CreatedByUserId = userGuidId,
+                CreatedAt = new DateTime(),
+                CoverImageUrl = createEventDto.CoverImageUrl,
+                CardImageUrl = createEventDto.CardImageUrl,
+                OrganizerInfo = createEventDto.OrganizerInfo,
+                OrganizerLogoUrl = createEventDto.OrganizerLogoUrl,
+                VenueName = createEventDto.VenueName,
+                AddressStreet = createEventDto.AddressStreet,
+                AddressWard = createEventDto.AddressWard,
+                AddressDistrict = createEventDto.AddressDistrict,
+                AddressCity = createEventDto.AddressCity,
+                CategoryId = createEventDto.CategoryId
+            };
+            try
+            {
+                await _eventService.CreateEvent(newEvent);
+                var newTicketTypes = createTicketTypeList.Select(t => new TicketType
+                {
+                    EventId = newEvent.EventId,
+                    Name = t.Name,
+                    Price = t.Price,
+                    Quantity = t.Quantity,
+                    AvailableQuantity = t.Quantity,
+                    SaleStartDate = t.SaleStartDate,
+                    SaleEndDate = t.SaleEndDate,
+                }).ToList();
+                await _eventService.CreateTicketTypes(newTicketTypes);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("getAllEventCategories")]
+        public async Task<ActionResult> GetAllEventCategories()
+        {
+            try
+            {
+                var eventCategories = await _eventService.GetAllEventCategories();
+                return Ok(eventCategories);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+
+        }
+
+        [HttpGet("getSpeakerEvents")]
+        public async Task<ActionResult> GetSpeakerEvents()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return BadRequest();
+            var userGuidId = Guid.Parse(userId);
+            if (userGuidId == Guid.Empty) return BadRequest();
+
+            try
+            {
+                var events = await _eventService.GetSpeakerEvents(userGuidId);
+                var eventsDto = events.Select(e => new MyEventDto
+                {
+                    EventId = e.EventId,
+                    Description = e.Description,
+                    CoverImageUrl = e.CoverImageUrl,
+                    Title = e.Title,
+                    TotalSeats = e.TicketTypes.Sum(t => t.Quantity),
+                    StartTime = e.StartTime,
+                    Location = e.VenueName,
+                }).ToList();
+                return Ok(eventsDto);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
+
+        [Authorize]
+        [HttpGet("applied")]
+        public async Task<IActionResult> GetAppliedEvents()
+        {
+            var response = new BaseResultResponse<AppliedEventsGroupedDto>();
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    response.StatusCode = StatusCodes.Status401Unauthorized;
+                    response.Success = false;
+                    response.Message = "User not found in token.";
+                    return StatusCode(StatusCodes.Status401Unauthorized, response);
+                }
+
+                var userGuidId = Guid.Parse(userId);
+                var appliedEvents = await _eventService.GetAppliedEventsAsync(userGuidId);
+
+                response.StatusCode = StatusCodes.Status200OK;
+                response.Success = true;
+                response.Message = "Applied events retrieved successfully.";
+                response.Data = appliedEvents;
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = StatusCodes.Status500InternalServerError;
+                response.Success = false;
+                response.Message = "An error occurred while processing your request.";
+                response.Errors = new List<string> { ex.Message };
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
+            }
         }
     }
 }

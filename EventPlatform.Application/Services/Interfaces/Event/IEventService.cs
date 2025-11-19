@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EventPlatform.Domain.Entities;
 
 namespace EventPlatform.Application.Services.Interfaces.Event
 {
@@ -11,5 +12,10 @@ namespace EventPlatform.Application.Services.Interfaces.Event
     {
         Task<PaginatedResult<EventSummaryDto>> GetEventsAsync(EventQueryParameters query);
         Task<EventDetailDto?> GetEventByIdAsync(int eventId);
+        Task CreateEvent(Domain.Entities.Event e);
+        Task CreateTicketTypes(List<TicketType> t);
+        Task<IEnumerable<EventCategory>> GetAllEventCategories();
+        Task<IEnumerable<Domain.Entities.Event>> GetSpeakerEvents(Guid userId);
+        Task<AppliedEventsGroupedDto> GetAppliedEventsAsync(Guid userId);
     }
 }

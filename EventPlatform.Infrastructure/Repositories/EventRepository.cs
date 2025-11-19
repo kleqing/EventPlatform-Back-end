@@ -1,5 +1,5 @@
 ﻿using EventPlatform.Application.Contracts.Dtos;
-using EventPlatform.Application.Interfaces;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +14,7 @@ namespace EventPlatform.Infrastructure.Repositories
     public class EventRepository : IEventRepository
     {
         private readonly ApplicationDbContext _context;
-        
+
         public EventRepository(ApplicationDbContext context)
         {
             _context = context;
@@ -121,5 +121,37 @@ namespace EventPlatform.Infrastructure.Repositories
 
             return eventDetail;
         }
-    } 
+
+
+        public async Task CreateAsync(Event e)
+        {
+            await _context.Events.AddAsync(e);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Event>> GetSpeakerEvents(Guid userId)
+        {
+            return await _context.Events.Where(e => e.CreatedByUserId == userId).ToListAsync();
+        }
+
+        public async Task<IEnumerable<Event>> GetAppliedEventsAsync(Guid userId)
+        {
+            var eventIds = await _context.Registrations
+                .AsNoTracking()
+                .Where(r => r.UserId == userId)
+                .Select(r => r.TicketType.EventId)
+                .Distinct()
+                .ToListAsync();
+
+            if (eventIds.Count == 0)
+            {
+                return new List<Event>();
+            }
+
+            return await _context.Events
+                .AsNoTracking()
+                .Where(e => eventIds.Contains(e.EventId))
+                .ToListAsync();
+        }
+    }
 }

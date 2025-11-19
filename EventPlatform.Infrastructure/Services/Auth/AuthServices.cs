@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Security.Claims;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
 using EventPlatform.Application.Interfaces;
@@ -32,7 +33,7 @@ public class AuthServices : IAuthServices
         _configuration = configuration;
     }
 
-    public async Task<User> LoginWithGoogle(ClaimsPrincipal claimsPrincipal)
+    public async Task<EventPlatform.Domain.Entities.User> LoginWithGoogle(ClaimsPrincipal claimsPrincipal)
     {
         if (claimsPrincipal == null)
         {
@@ -51,7 +52,7 @@ public class AuthServices : IAuthServices
         if (user == null)
         {
             // User does not exist, create a new user
-            user = new User
+            user = new EventPlatform.Domain.Entities.User
             {
                 Email = email,
                 FullName = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value,
@@ -80,7 +81,7 @@ public class AuthServices : IAuthServices
         return user;
     }
 
-    public async Task<User?> CreateAccount(RegisterRequest request)
+    public async Task<EventPlatform.Domain.Entities.User?> CreateAccount(RegisterRequest request)
     {
         var existingUser = await _userRepository.FindByEmailAsync(request.Email);
         if (existingUser != null)
@@ -94,7 +95,7 @@ public class AuthServices : IAuthServices
         //     throw new GlobalException("Username is already in use");
         // }
 
-        var user = new User
+        var user = new EventPlatform.Domain.Entities.User
         {
             FullName = request.FullName,
             Email = request.Email,
@@ -251,7 +252,46 @@ public class AuthServices : IAuthServices
         await _redisDatabase.KeyDeleteAsync(redisKey);
     }
 
-    public async Task ResendEmailConfirmationAsync(User user)
+    public async Task ChangePasswordAsync(EventPlatform.Domain.Entities.User user, ChangePasswordRequest request)
+    {
+        if (user == null)
+        {
+            throw new GlobalException("User not found");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+            string.IsNullOrWhiteSpace(request.NewPassword) ||
+            string.IsNullOrWhiteSpace(request.ConfirmNewPassword))
+        {
+            throw new GlobalException("All password fields are required");
+        }
+
+        if (request.NewPassword != request.ConfirmNewPassword)
+        {
+            throw new GlobalException("New password and confirmation do not match");
+        }
+
+        if (request.NewPassword == request.CurrentPassword)
+        {
+            throw new GlobalException("New password must be different from the current password");
+        }
+
+        var userFromDb = await _userRepository.FindByIdAsync(user.UserId.ToString());
+        if (userFromDb == null)
+        {
+            throw new GlobalException("User not found");
+        }
+
+        var isCurrentPasswordValid = await _userRepository.CheckPasswordAsync(userFromDb, request.CurrentPassword);
+        if (!isCurrentPasswordValid)
+        {
+            throw new GlobalException("Current password is incorrect");
+        }
+
+        await _userRepository.ChangePasswordAsync(userFromDb, request.NewPassword);
+    }
+
+    public async Task ResendEmailConfirmationAsync(EventPlatform.Domain.Entities.User user)
     {
         if (!await _userRepository.IsEmailConfirmedAsync(user))
         {
@@ -270,7 +310,7 @@ public class AuthServices : IAuthServices
         }
     }
 
-    public async Task Logout(User user)
+    public async Task Logout(EventPlatform.Domain.Entities.User user)
     {
         user.RefreshToken = null;
         user.RefreshTokenExpiryTime = null;

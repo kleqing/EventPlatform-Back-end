@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using EventPlatform.Application.Common;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
 using EventPlatform.Application.Interfaces;
@@ -51,16 +52,15 @@ public class AuthController : ControllerBase
         }
 
         var claimsPrincipal = result.Principal;
-        await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
-        var name = claimsPrincipal.FindFirst(ClaimTypes.GivenName)?.Value + " " +
-                   claimsPrincipal.FindFirst(ClaimTypes.Surname)?.Value;
-        var avatar = claimsPrincipal.FindFirst("picture")?.Value ?? string.Empty;
+        var user = await _authorizeServices.LoginWithGoogle(claimsPrincipal);
 
-        var frontendUrl =
-            $"{returnUrl}?email={Uri.EscapeDataString(email)}&name={Uri.EscapeDataString(name)}&avatar={Uri.EscapeDataString(avatar)}";
-        return Redirect(frontendUrl);
+        if (user == null)
+        {
+            return RedirectToAction("Login", "Auth", new { error = "GoogleLoginFailed" });
+        }
+    
+        return Redirect(returnUrl);
     }
 
     [AllowAnonymous]
@@ -113,30 +113,37 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    // File: EventPlatform.WebApi/Controllers/AuthController.cs
+
     [AllowAnonymous]
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail(string userId, string token)
     {
+        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
+    
+        var failureRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail=";
+
         var user = await _userRepository.FindByIdAsync(userId);
         if (user == null)
         {
-            return BadRequest("Invalid user ID.");
+            return Redirect(failureRedirectUrl);
         }
 
         var isValid = _authTokenProcess.ValidateEmailConfirmationToken(user, token);
         if (!isValid)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl); 
         }
 
         var confirmedUser = await _userRepository.ConfirmEmailAsync(user);
         if (confirmedUser == null)
         {
-            return BadRequest("Email confirmation failed.");
+            return Redirect(failureRedirectUrl);
         }
 
-        var frontendUrl = UrlHelper.GetFrontendUrl(_configuration);
-        return Redirect($"{frontendUrl}/verify-success?verifiedEmail={Uri.EscapeDataString(user.Email)}");
+        var successRedirectUrl = $"{frontendUrl}/Auth/ConfirmEmail?verifiedEmail={Uri.EscapeDataString(user.Email)}";
+    
+        return Redirect(successRedirectUrl);
     }
 
     [AllowAnonymous]
@@ -227,6 +234,62 @@ public class AuthController : ControllerBase
             response.Errors = new List<string> { e.Message };
             response.Data = null;
             return BadRequest(response);
+        }
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var response = new BaseResultResponse<string>();
+
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                response.StatusCode = StatusCodes.Status401Unauthorized;
+                response.Success = false;
+                response.Message = "User not found in token.";
+                response.Data = null;
+                return StatusCode(StatusCodes.Status401Unauthorized, response);
+            }
+
+            var user = await _userRepository.FindByIdAsync(userId);
+            if (user == null)
+            {
+                response.StatusCode = StatusCodes.Status404NotFound;
+                response.Success = false;
+                response.Message = "User not found.";
+                response.Data = null;
+                return NotFound(response);
+            }
+
+            await _authorizeServices.ChangePasswordAsync(user, request);
+
+            response.StatusCode = StatusCodes.Status200OK;
+            response.Success = true;
+            response.Message = "Password changed successfully.";
+            response.Data = null;
+            return Ok(response);
+        }
+        catch (GlobalException e)
+        {
+            response.StatusCode = StatusCodes.Status400BadRequest;
+            response.Success = false;
+            response.Message = e.Message;
+            response.Errors = new List<string> { e.Message };
+            response.Data = null;
+            return BadRequest(response);
+        }
+        catch (Exception e)
+        {
+            response.StatusCode = StatusCodes.Status500InternalServerError;
+            response.Success = false;
+            response.Message = "An error occurred while processing your request.";
+            response.Errors = new List<string> { e.Message };
+            response.Data = null;
+            return StatusCode(StatusCodes.Status500InternalServerError, response);
         }
     }
 

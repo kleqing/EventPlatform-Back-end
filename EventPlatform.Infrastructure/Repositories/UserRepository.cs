@@ -1,4 +1,4 @@
-﻿using EventPlatform.Application.Interfaces;
+using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using EventPlatform.Shared.Exceptions;
@@ -31,7 +31,7 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .FirstOrDefaultAsync(u => u.UserId == guid);
     }
-    
+
     public async Task<User?> FindByNameAsync(string fullName)
     {
         var user = await _context.Users
@@ -103,6 +103,17 @@ public class UserRepository : IUserRepository
     }
 
     public async Task<User?> ResetPasswordAsync(User user, string newPassword)
+    {
+        var userInDb = await _context.Users.FirstOrDefaultAsync(u => u.UserId == user.UserId);
+        if (userInDb == null) return null;
+
+        userInDb.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        userInDb.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return userInDb;
+    }
+
+    public async Task<User?> ChangePasswordAsync(User user, string newPassword)
     {
         var userInDb = await _context.Users.FirstOrDefaultAsync(u => u.UserId == user.UserId);
         if (userInDb == null) return null;

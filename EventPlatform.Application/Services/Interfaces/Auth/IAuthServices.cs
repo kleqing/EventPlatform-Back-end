@@ -7,12 +7,13 @@ namespace EventPlatform.Application.Services.Interfaces.Auth;
 
 public interface IAuthServices
 {
-    Task<User> LoginWithGoogle(ClaimsPrincipal claimsPrincipal);
-    Task<User?> CreateAccount(RegisterRequest request);
+    Task<EventPlatform.Domain.Entities.User> LoginWithGoogle(ClaimsPrincipal claimsPrincipal);
+    Task<EventPlatform.Domain.Entities.User?> CreateAccount(RegisterRequest request);
     Task<LoginResponse?> Login(LoginRequest request);
     Task InitiatePasswordReset(string email);
     Task<bool> VerifyPasswordResetToken(string token);
     Task ResetPasswordAsync(ResetPasswordRequest request);
-    Task ResendEmailConfirmationAsync(User user);
-    Task Logout(User user);
+    Task ChangePasswordAsync(EventPlatform.Domain.Entities.User user, ChangePasswordRequest request);
+    Task ResendEmailConfirmationAsync(EventPlatform.Domain.Entities.User user);
+    Task Logout(EventPlatform.Domain.Entities.User user);
 }
