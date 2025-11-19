@@ -158,30 +158,30 @@ namespace EventPlatform.WebApi.Controllers
             }
         }
 
-        //[Authorize]
-        //[HttpGet("applied")]
-        //public async Task<IActionResult> GetAppliedEvents()
-        //{
-        //    var response = new BaseResultResponse<AppliedEventsGroupedDto>();
+        [Authorize]
+        [HttpGet("applied")]
+        public async Task<IActionResult> GetAppliedEvents()
+        {
+            var response = new BaseResultResponse<AppliedEventsGroupedDto>();
 
-        //    try
-        //    {
-        //        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //        if (string.IsNullOrEmpty(userId))
-        //        {
-        //            response.StatusCode = StatusCodes.Status401Unauthorized;
-        //            response.Success = false;
-        //            response.Message = "User not found in token.";
-        //            return StatusCode(StatusCodes.Status401Unauthorized, response);
-        //        }
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    response.StatusCode = StatusCodes.Status401Unauthorized;
+                    response.Success = false;
+                    response.Message = "User not found in token.";
+                    return StatusCode(StatusCodes.Status401Unauthorized, response);
+                }
 
-        //        var userGuidId = Guid.Parse(userId);
-        //        var appliedEvents = await _eventService.GetAppliedEventsAsync(userGuidId);
+                var userGuidId = Guid.Parse(userId);
+                var appliedEvents = await _eventService.GetAppliedEventsAsync(userGuidId);
 
-        //        response.StatusCode = StatusCodes.Status200OK;
-        //        response.Success = true;
-        //        response.Message = "Applied events retrieved successfully.";
-        //        response.Data = appliedEvents;
+                response.StatusCode = StatusCodes.Status200OK;
+                response.Success = true;
+                response.Message = "Applied events retrieved successfully.";
+                response.Data = appliedEvents;
 
                 return Ok(response);
             }
