@@ -84,9 +84,31 @@ public class EmailSender : IEmailSender
 
     private string GenerateEmailTemplate(string email, string subject, string htmlMsg)
     {
-        return "Add your email template here" +
-               $"<h3>{subject}</h3>" +
-               $"<p>To: {email}</p>" +
-               $"<div>{htmlMsg}</div>";
+        return $@"
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }}
+            .header {{ background-color: #e91e63; color: white; padding: 10px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ padding: 20px; }}
+            .footer {{ text-align: center; font-size: 12px; color: #777; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>Event Platform</h1>
+            </div>
+            <div class='content'>
+                {htmlMsg} 
+            </div>
+            <div class='footer'>
+                <p>Email này được gửi tự động đến {email}. Vui lòng không trả lời.</p>
+            </div>
+        </div>
+    </body>
+    </html>";
     }
 }

@@ -2,6 +2,7 @@
 using EventPlatform.Application.Contracts.Dtos;
 using EventPlatform.Application.Services.Interfaces.Payment;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Authentication;
 
 namespace EventPlatform.WebApi.Controllers
@@ -40,8 +41,18 @@ namespace EventPlatform.WebApi.Controllers
         {
             try
             {
-                Request.Headers.TryGetValue("X-Sepay-Key", out var apiKeyHeader);
-                await _paymentService.HandleSepayWebhookAsync(payload, apiKeyHeader.FirstOrDefault());
+                string apiKey = "";
+                if (Request.Headers.TryGetValue("Authorization", out var apiKeyHeader))
+                {
+                    string headerValue = apiKeyHeader.FirstOrDefault();
+                    // Header sẽ có dạng: "Apikey P"
+                    // Cần cắt bỏ chữ "Apikey " để lấy chữ "P"
+                    if (!string.IsNullOrEmpty(headerValue) && headerValue.StartsWith("Apikey "))
+                    {
+                        apiKey = headerValue.Substring(7); // Lấy từ ký tự thứ 7 trở đi
+                    }
+                }
+                await _paymentService.HandleSepayWebhookAsync(payload, apiKey);
 
                 return Ok();
             }
@@ -59,8 +70,28 @@ namespace EventPlatform.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "An internal server error occurred." });
+                return Ok(new
+                {
+                    success = false,
+                    error_type = "Exception (Server Error)",
+                    message = ex.Message,
+                    stack_trace = ex.ToString() // Cái này sẽ cho bạn biết lỗi ở dòng nào
+                });
             }
+        }
+
+        [HttpGet("check-status/{registrationId}")]
+        public async Task<IActionResult> CheckPaymentStatus(Guid registrationId)
+        {
+            var status = await _paymentService.GetPaymentStatusAsync(registrationId);
+
+            if (status == null)
+            {
+                return NotFound(new { message = "Không tìm thấy giao dịch." });
+            }
+
+            // Trả về status hiện tại (Pending hoặc Success)
+            return Ok(new { status = status });
         }
     }
 }
