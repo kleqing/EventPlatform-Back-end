@@ -11,5 +11,6 @@ namespace EventPlatform.Application.Services.Interfaces.Event
     public interface IRegistrationService
     {
         Task<BookingResponse> CreateBookingAsync(CreateBookingRequest request);
+        Task CancelBookingAsync(CancelBookingRequest request);
     }
 }

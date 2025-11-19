@@ -43,5 +43,19 @@ namespace EventPlatform.WebApi.Controllers
                 return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
             }
         }
+
+        [HttpPost("cancel")]
+        public async Task<IActionResult> CancelBooking([FromBody] CancelBookingRequest request)
+        {
+            try
+            {
+                await _registrationService.CancelBookingAsync(request);
+                return Ok(new { message = "Đã hủy đơn và hoàn vé." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
