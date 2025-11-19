@@ -57,6 +57,8 @@ public partial class User
 
     public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();
 
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+
     public virtual ICollection<Registration> Registrations { get; set; } = new List<Registration>();
 
     public virtual SpeakerProfile? SpeakerProfile { get; set; }

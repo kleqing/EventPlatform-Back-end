@@ -17,6 +17,8 @@ public partial class Connection
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual Conversation? Conversation { get; set; }
+
     public virtual User Receiver { get; set; } = null!;
 
     public virtual User Requester { get; set; } = null!;

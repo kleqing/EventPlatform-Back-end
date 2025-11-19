@@ -18,6 +18,8 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Connection> Connections { get; set; }
 
+    public virtual DbSet<Conversation> Conversations { get; set; }
+
     public virtual DbSet<Event> Events { get; set; }
 
     public virtual DbSet<EventCategory> EventCategories { get; set; }
@@ -32,6 +34,8 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<ForumPost> ForumPosts { get; set; }
 
+    public virtual DbSet<Message> Messages { get; set; }
+
     public virtual DbSet<Registration> Registrations { get; set; }
 
     public virtual DbSet<SpeakerProfile> SpeakerProfiles { get; set; }
@@ -43,7 +47,8 @@ public partial class ApplicationDbContext : DbContext
     public virtual DbSet<Transaction> Transactions { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-    
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Connection>(entity =>
@@ -70,6 +75,23 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.RequesterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Connectio__Reque__1BC821DD");
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasIndex(e => e.ConnectionId, "UQ_Conversations_Connection").IsUnique();
+
+            entity.Property(e => e.ConversationId).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Connection).WithOne(p => p.Conversation)
+                .HasForeignKey<Conversation>(d => d.ConnectionId)
+                .HasConstraintName("FK_Conversations_Connections");
         });
 
         modelBuilder.Entity<Event>(entity =>
@@ -267,6 +289,30 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ForumPost__UserI__0B91BA14");
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasIndex(e => new { e.ConversationId, e.SentAt }, "IX_Messages_Conversation_SentAt").IsDescending(false, true);
+
+            entity.HasIndex(e => e.SenderId, "IX_Messages_Sender");
+
+            entity.Property(e => e.MessageId).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.MessageType)
+                .HasMaxLength(50)
+                .HasDefaultValue("Text");
+            entity.Property(e => e.ReadAt).HasPrecision(0);
+            entity.Property(e => e.SentAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.ConversationId)
+                .HasConstraintName("FK_Messages_Conversations");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.Messages)
+                .HasForeignKey(d => d.SenderId)
+                .HasConstraintName("FK_Messages_Users");
         });
 
         modelBuilder.Entity<Registration>(entity =>
