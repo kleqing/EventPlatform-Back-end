@@ -1,0 +1,47 @@
+﻿using EventPlatform.Application.Contracts.Requests;
+using EventPlatform.Application.Services.Interfaces.Event;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EventPlatform.WebApi.Controllers
+{
+    [Route("api/[controller]")] 
+    [ApiController]
+    [Authorize] 
+    public class RegistrationsController : ControllerBase
+    {
+        private readonly IRegistrationService _registrationService;
+
+        public RegistrationsController(IRegistrationService registrationService)
+        {
+            _registrationService = registrationService;
+        }
+
+        [HttpPost] 
+        public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequest request)
+        {
+            try
+            {
+                var result = await _registrationService.CreateBookingAsync(request);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+    }
+}

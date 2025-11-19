@@ -3,6 +3,11 @@ using EventPlatform.Application.Contracts.Interfaces;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace EventPlatform.Infrastructure.Repositories
 {
@@ -96,6 +101,14 @@ namespace EventPlatform.Infrastructure.Repositories
                         FullName = s.User.FullName,
                         JobTitle = s.JobTitle,
                         AvatarUrl = s.User.AvatarUrl
+                    }).ToList(),
+
+                    TicketTypes = e.TicketTypes.Select(tt => new TicketTypeDto
+                    {
+                        TicketTypeId = tt.TicketTypeId,
+                        Name = tt.Name,
+                        Price = tt.Price,
+                        AvailableQuantity = tt.AvailableQuantity
                     }).ToList(),
 
                     Feedbacks = e.Feedbacks.Select(f => new FeedbackDto

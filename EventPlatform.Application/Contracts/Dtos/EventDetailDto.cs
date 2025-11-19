@@ -26,6 +26,7 @@ namespace EventPlatform.Application.Contracts.Dtos
 
         public List<SpeakerDto> Speakers { get; set; } = new();
         public List<FeedbackDto> Feedbacks { get; set; } = new();
+        public List<TicketTypeDto> TicketTypes { get; set; } = new();
     }
 
     public class SpeakerDto
@@ -46,4 +47,13 @@ namespace EventPlatform.Application.Contracts.Dtos
         public int Rating { get; set; }
         public string Comment { get; set; }
     }
+
+    public class TicketTypeDto
+    {
+        public int TicketTypeId { get; set; }
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public int AvailableQuantity { get; set; }
+    }
+
 }

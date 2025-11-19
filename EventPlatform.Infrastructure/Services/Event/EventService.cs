@@ -4,6 +4,13 @@ using EventPlatform.Application.Contracts.Dtos;
 using EventPlatform.Application.Services.Interfaces.Event;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Application.Contracts.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using EventPlatform.Domain.Entities;
+using EventPlatform.Application.Contracts.Interfaces;
 
 namespace EventPlatform.Infrastructure.Services.Event
 {
@@ -28,7 +35,6 @@ namespace EventPlatform.Infrastructure.Services.Event
 
         public async Task<EventDetailDto?> GetEventByIdAsync(int eventId)
         {
-            // Có thể thêm logic kiểm tra quyền hạn, caching, v.v. ở đây
             return await _eventRepository.GetEventByIdAsync(eventId);
         }
 
