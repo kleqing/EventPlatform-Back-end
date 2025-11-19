@@ -181,5 +181,50 @@ namespace EventPlatform.WebApi.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
         }
+
+        [AllowAnonymous]
+        [HttpGet("listComments/{eventId}")]
+        public async Task<IActionResult> ListComments(int eventId)
+        {
+            var response = new BaseResultResponse<List<CommentDto>>();
+            
+            var comments = await _eventService.ListCommentsAsync(eventId);
+
+            if (comments == null)
+            {
+                response.StatusCode = StatusCodes.Status404NotFound;
+                response.Success = false;
+                response.Message = "No comments found for the specified event.";
+                return NotFound(response);
+            }
+            
+            response.StatusCode = StatusCodes.Status200OK;
+            response.Success = true;
+            response.Message = "Comments retrieved successfully.";
+            response.Data = comments;
+            return Ok(response);
+        }
+
+        [Authorize]
+        [HttpPost("createComment")]
+        public async Task<IActionResult> CreateComment([FromBody] CreateFeedbackRequest request)
+        {
+            var response = new BaseResultResponse<CommentDto>();
+            var createComment = await _eventService.CreateCommentAsync(request);
+            
+            if (createComment == null)
+            {
+                response.StatusCode = StatusCodes.Status400BadRequest;
+                response.Success = false;
+                response.Message = "Failed to create comment.";
+                return BadRequest(response);
+            }
+            
+            response.StatusCode = StatusCodes.Status200OK;
+            response.Success = true;
+            response.Message = "Comment created successfully.";
+            response.Data = createComment;
+            return Ok(response);
+        }
     }
 }

@@ -112,18 +112,18 @@ namespace EventPlatform.Infrastructure.Repositories
                     }).ToList(),
 
                     Feedbacks = e.Feedbacks.Select(f => new FeedbackDto
-                    {
-                        FeedbackId = f.FeedbackId,
-                        UserId = f.UserId,
-                        AuthorName = f.User.FullName,
-                        AuthorAvatarUrl = f.User.AvatarUrl,
-                        SubmittedAt = f.SubmittedAt ?? DateTime.MinValue,
-                        Rating = f.Rating,
-                        Comment = f.Comment
-                    })
-                    .OrderByDescending(f => f.SubmittedAt)
-                    .Take(10) // Chỉ lấy 10 feedback mới nhất
-                    .ToList()
+                        {
+                            FeedbackId = f.FeedbackId,
+                            UserId = f.UserId,
+                            AuthorName = f.User.FullName,
+                            AuthorAvatarUrl = f.User.AvatarUrl,
+                            SubmittedAt = f.SubmittedAt ?? DateTime.MinValue,
+                            Rating = f.Rating,
+                            Comment = f.Comment
+                        })
+                        .OrderByDescending(f => f.SubmittedAt)
+                        .Take(10) // Chỉ lấy 10 feedback mới nhất
+                        .ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -161,5 +161,20 @@ namespace EventPlatform.Infrastructure.Repositories
                 .Where(e => eventIds.Contains(e.EventId))
                 .ToListAsync();
         }
-    }
+
+        public async Task AddFeedbackAsync(Feedback feedback)
+        {
+            await _context.Feedbacks.AddAsync(feedback);
+            await _context.SaveChangesAsync();
+        }
+        
+        public async Task<List<Feedback>> GetFeedbacksByEventIdAsync(int eventId)
+        {
+            return await _context.Feedbacks
+                .Where(f => f.EventId == eventId)
+                .Include(f => f.User)
+                .OrderByDescending(f => f.SubmittedAt)
+                .ToListAsync();
+        }
+    }   
 }
