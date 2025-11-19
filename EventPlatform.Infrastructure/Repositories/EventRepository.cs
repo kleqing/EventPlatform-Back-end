@@ -103,6 +103,14 @@ namespace EventPlatform.Infrastructure.Repositories
                         AvatarUrl = s.User.AvatarUrl
                     }).ToList(),
 
+                    TicketTypes = e.TicketTypes.Select(tt => new TicketTypeDto
+                    {
+                        TicketTypeId = tt.TicketTypeId,
+                        Name = tt.Name,
+                        Price = tt.Price,
+                        AvailableQuantity = tt.AvailableQuantity
+                    }).ToList(),
+
                     Feedbacks = e.Feedbacks.Select(f => new FeedbackDto
                     {
                         FeedbackId = f.FeedbackId,
