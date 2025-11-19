@@ -31,4 +31,18 @@ public class UrlHelper
         }
         return frontendUrl;
     }
+
+    public static string GetFastAPIUrl(IConfiguration configuration)
+    {
+        var fastapiUrl = Environment.GetEnvironmentVariable("FASTAPI_URL");
+        if (string.IsNullOrWhiteSpace(fastapiUrl))
+        {
+            fastapiUrl = configuration["URLs:FastAPIURL"];
+            if (string.IsNullOrWhiteSpace(fastapiUrl))
+            {
+                throw new Exception("fastapi URL not configured");
+            }
+        }
+        return fastapiUrl;
+    }
 }

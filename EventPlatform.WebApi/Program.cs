@@ -62,6 +62,7 @@ public class Program
         //* Some DI registrations can override for services lifetimes
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddSingleton<CloudinaryUploader>();
+        builder.Services.AddHttpClient();
 
         // Add services to the container.
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
