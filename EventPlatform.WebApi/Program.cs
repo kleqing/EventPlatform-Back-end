@@ -9,6 +9,7 @@ using EventPlatform.Infrastructure.Repositories;
 using EventPlatform.Infrastructure.Services.Email;
 using EventPlatform.Shared.Jwt;
 using EventPlatform.Shared.Utils;
+using EventPlatform.WebApi.Hubs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,7 @@ public class Program
         {
             connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? string.Empty;
         }
-        
+
         builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
         //* Dependencies Injection
@@ -61,7 +62,7 @@ public class Program
         //* Some DI registrations can override for services lifetimes
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddSingleton<CloudinaryUploader>();
-        
+
         // Add services to the container.
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
         builder.Services.AddControllers().AddJsonOptions(options =>
@@ -70,8 +71,10 @@ public class Program
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         });
 
+        builder.Services.AddSignalR();
+
         //* JWT Settings
-        
+
         builder.Services.Configure<Jwt>(options =>
         {
             options.Secret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"] ?? string.Empty;
@@ -84,7 +87,7 @@ public class Program
         builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme =  JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = "External";
             })
             .AddJwtBearer("Bearer", _ =>
@@ -101,19 +104,19 @@ public class Program
                     Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? builder.Configuration["GOOGLE_CLIENT_ID"] ?? string.Empty;
                 var clientSecret = options.ClientSecret =
                     Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? builder.Configuration["GOOGLE_CLIENT_SECRET"] ?? string.Empty;
-                
+
                 if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
                 {
                     throw new Exception("Google ClientId or ClientSecret is missing");
                 }
-                
+
                 options.ClientId = clientId;
                 options.ClientSecret = clientSecret;
                 options.ClaimActions.MapJsonKey("picture", "picture");
                 options.SaveTokens = true;
                 options.CallbackPath = "/signin-google";
             });
-        
+
         builder.Services.PostConfigure<JwtBearerOptions>("Bearer", options =>
         {
             var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"] ?? string.Empty;
@@ -132,7 +135,7 @@ public class Program
                 ClockSkew = TimeSpan.Zero, //* Disable the default 5-minute clock skew
                 RequireExpirationTime = true //* Require the token to have an expiration time
             };
-            
+
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
@@ -154,7 +157,7 @@ public class Program
                 }
             };
         });
-        
+
         builder.Services.AddAuthorization();
 
         //* CORS
@@ -175,7 +178,7 @@ public class Program
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new() { Title = "EventPlatform API", Version = "v1", Description = "A RESTful API for EventPlatform application" });
-            
+
             //* Add JWT Authentication to Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
@@ -186,7 +189,7 @@ public class Program
                 BearerFormat = "JWT",
                 Scheme = "bearer"
             });
-            
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
@@ -202,9 +205,9 @@ public class Program
                 }
             });
         });
-        
+
         builder.Services.AddHttpContextAccessor();
-        
+
         //* Redis Cache
         builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
@@ -230,13 +233,13 @@ public class Program
                 throw new InvalidOperationException("Failed to connect to Redis: " + ex.Message, ex);
             }
         });
-        
+
         builder.Services.AddScoped<IDatabase>(sp =>
         {
             var connection = sp.GetRequiredService<IConnectionMultiplexer>();
             return connection.GetDatabase();
         });
-        
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -253,8 +256,9 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
-        
+
         app.MapControllers();
+        app.MapHub<ChatHub>("/hubs/chat");
 
         app.Run();
     }

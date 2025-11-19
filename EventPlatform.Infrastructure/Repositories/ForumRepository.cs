@@ -60,7 +60,7 @@ public class ForumRepository : IForumRepository
                     AvatarUrl = x.User.AvatarUrl,
                     AccountStatus = x.User.AccountStatus,
                 },
-                CommentCount = _context.ForumComments.Count(c => c.PostId == x.PostId),
+                //CommentCount = _context.ForumComments.Count(c => c.PostId == x.PostId),
             });
 
         if (categoryId.HasValue)

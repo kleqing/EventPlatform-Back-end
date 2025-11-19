@@ -52,7 +52,7 @@ public class UserService : IUserService
             throw new Exception("New password and confirm password do not match");
 
         var updatedUser = await _repository.ResetPasswordAsync(user, request.NewPassword);
-        return updatedUser; 
+        return updatedUser;
     }
 
     public async Task<List<EventDto>> ListAppliedUserEventThisMonth(Guid userId)
@@ -79,7 +79,7 @@ public class UserService : IUserService
 
         return events;
     }
-    
+
     public async Task<SpeakerProfileDto?> GetSpeakerProfileByUserId(Guid userId)
     {
         var sp = await _context.SpeakerProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
@@ -96,7 +96,7 @@ public class UserService : IUserService
             LinkedInUrl = sp.LinkedInUrl,
         };
     }
-    
+
     public async Task<SpeakerProfile?> UpdateSpeakerProfile(Guid userId, UpdateSpeakerProfileRequest request)
     {
         var existingProfile = await _context.SpeakerProfiles
@@ -117,12 +117,12 @@ public class UserService : IUserService
         existingProfile.User.UpdatedAt = DateTime.UtcNow;
 
         _context.SpeakerProfiles.Update(existingProfile);
-        
+
         await _context.SaveChangesAsync();
 
         return existingProfile;
     }
-    
+
     public async Task<List<EventDto>> ListRecommendedEventsForUser(Guid userId)
     {
         var recommendedEvents = await _context.Events
@@ -144,7 +144,7 @@ public class UserService : IUserService
 
         return recommendedEvents;
     }
-    
+
     public async Task<List<UserDto>> ListRecommendPartnersForUser(Guid userId)
     {
         var recommendedPartners = await _context.Users
@@ -152,11 +152,12 @@ public class UserService : IUserService
             .OrderBy(u => Guid.NewGuid())
             .Take(5)
             .ToListAsync();
-        
+
         var recommendedPartnerDtos = recommendedPartners.Select(u => new UserDto
         {
             UserId = u.UserId,
             FullName = u.FullName,
+            Email = u.Email,
             AvatarUrl = u.AvatarUrl,
             AddressCity = u.AddressCity
         }).ToList();
