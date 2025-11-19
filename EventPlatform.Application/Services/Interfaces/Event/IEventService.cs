@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Domain.Entities;
 
 namespace EventPlatform.Application.Services.Interfaces.Event
@@ -17,5 +18,7 @@ namespace EventPlatform.Application.Services.Interfaces.Event
         Task<IEnumerable<EventCategory>> GetAllEventCategories();
         Task<IEnumerable<Domain.Entities.Event>> GetSpeakerEvents(Guid userId);
         Task<AppliedEventsGroupedDto> GetAppliedEventsAsync(Guid userId);
+        Task<CommentDto> CreateCommentAsync(CreateFeedbackRequest request);
+        Task<List<CommentDto>> ListCommentsAsync(int eventId);
     }
 }

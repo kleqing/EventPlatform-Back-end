@@ -4,13 +4,7 @@ using EventPlatform.Application.Contracts.Dtos;
 using EventPlatform.Application.Services.Interfaces.Event;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Application.Contracts.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EventPlatform.Domain.Entities;
-using EventPlatform.Application.Contracts.Interfaces;
+using EventPlatform.Application.Contracts.Requests;
 
 namespace EventPlatform.Infrastructure.Services.Event
 {
@@ -19,12 +13,14 @@ namespace EventPlatform.Infrastructure.Services.Event
         private readonly IEventRepository _eventRepository;
         private readonly ITicketTypeRepository _ticketTypeRepository;
         private readonly IEventCategoryRepository _eventCategoryRepository;
+        private readonly IUserRepository _userRepository;
 
-        public EventService(IEventRepository eventRepository, ITicketTypeRepository ticketTypeRepository, IEventCategoryRepository eventCategoryRepository)
+        public EventService(IEventRepository eventRepository, ITicketTypeRepository ticketTypeRepository, IEventCategoryRepository eventCategoryRepository, IUserRepository userRepository)
         {
             _eventRepository = eventRepository;
             _ticketTypeRepository = ticketTypeRepository;
             _eventCategoryRepository = eventCategoryRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<PaginatedResult<EventSummaryDto>> GetEventsAsync(EventQueryParameters query)
@@ -98,6 +94,48 @@ namespace EventPlatform.Infrastructure.Services.Event
             return groupedResult;
         }
 
+        public async Task<CommentDto> CreateCommentAsync(CreateFeedbackRequest request)
+        {
+            var user = await _userRepository.FindByEmailAsync(request.UserEmail);
+            
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+            
+            var feedback = new Feedback
+            {
+                EventId = request.EventId,
+                UserId = user.UserId,
+                Rating = request.Rating,
+                Comment = request.Comment,
+                SubmittedAt = request.SubmittedAt ?? DateTime.UtcNow
+            };
 
+            await _eventRepository.AddFeedbackAsync(feedback);
+
+            return new CommentDto
+            {
+                UserName = feedback.User.FullName,
+                SubmittedAt = feedback.SubmittedAt,
+                Rating = feedback.Rating,
+                Comment = feedback.Comment,
+                AvatarUrl = feedback.User.AvatarUrl
+            };
+        }
+        
+        public async Task<List<CommentDto>> ListCommentsAsync(int eventId)
+        {
+            var feedbacks = await _eventRepository.GetFeedbacksByEventIdAsync(eventId);
+            
+            return feedbacks.Select(f => new CommentDto
+            {
+                UserName = f.User.FullName,
+                SubmittedAt = f.SubmittedAt,
+                Rating = f.Rating,
+                Comment = f.Comment,
+                AvatarUrl = f.User.AvatarUrl
+            }).ToList();
+        }
     }
 }
