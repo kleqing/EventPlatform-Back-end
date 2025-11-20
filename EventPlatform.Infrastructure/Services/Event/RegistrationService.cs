@@ -1,4 +1,5 @@
-﻿using EventPlatform.Application.Contracts.Requests;
+﻿using EventPlatform.Application.Contracts.Dtos;
+using EventPlatform.Application.Contracts.Requests;
 using EventPlatform.Application.Contracts.Responses;
 using EventPlatform.Application.Services.Interfaces;
 using EventPlatform.Application.Services.Interfaces.Event;
@@ -9,12 +10,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventPlatform.Infrastructure.Services.Event
 {
     public class RegistrationService : IRegistrationService
     {
-        private readonly ApplicationDbContext _context; 
+        private readonly ApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
 
         public RegistrationService(ApplicationDbContext context, ICurrentUserService currentUserService)
@@ -71,7 +73,7 @@ namespace EventPlatform.Infrastructure.Services.Event
                             UserId = userId.Value,
                             TicketTypeId = ticketType.TicketTypeId,
                             RegistrationDate = DateTime.UtcNow,
-                            UniqueToken = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper(), 
+                            UniqueToken = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper(),
                             CheckInTime = null
                         });
                     }
@@ -115,6 +117,88 @@ namespace EventPlatform.Infrastructure.Services.Event
                 await dbTransaction.RollbackAsync();
                 throw; // Ném lỗi ra để Controller bắt
             }
+        }
+
+        public async Task<IEnumerable<UserRegistrationDto>> GetMyRegistrationsAsync()
+        {
+            var userId = _currentUserService.GetCurrentUserId();
+            if (userId == null)
+            {
+                throw new UnauthorizedAccessException("Bạn cần đăng nhập để xem vé đã đặt.");
+            }
+
+            var registrations = await _context.Registrations
+                .AsNoTracking()
+                .Include(r => r.TicketType)
+                    .ThenInclude(tt => tt.Event)
+                .Include(u => u.User)
+                .Where(r => r.UserId == userId.Value)
+                .OrderByDescending(r => r.RegistrationDate ?? r.TicketType.Event.StartTime)
+                .ToListAsync();
+
+            return registrations.Select(r => new UserRegistrationDto
+            {
+                RegistrationId = r.RegistrationId,
+                UserId = r.UserId,
+                TicketTypeId = r.TicketTypeId,
+                TicketTypeName = r.TicketType.Name,
+                TicketPrice = r.TicketType.Price,
+                RegistrationDate = r.RegistrationDate,
+                UniqueToken = r.UniqueToken,
+                CheckInTime = r.CheckInTime,
+                EventId = r.TicketType.Event.EventId,
+                Title = r.TicketType.Event.Title,
+                StartTime = r.TicketType.Event.StartTime,
+                EndTime = r.TicketType.Event.EndTime,
+                EventType = r.TicketType.Event.EventType,
+                Location = r.TicketType.Event.Location,
+                OnlineUrl = r.TicketType.Event.OnlineUrl,
+                EventStatus = r.TicketType.Event.EventStatus,
+                IsOnline = !string.IsNullOrWhiteSpace(r.TicketType.Event.OnlineUrl)
+            });
+        }
+
+        public async Task<JoinMeetingInfoDto> GetJoinMeetingInfoAsync(Guid registrationId)
+        {
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("Bạn cần đăng nhập để tham gia sự kiện.");
+            }
+
+            var registration = await _context.Registrations
+                .Include(r => r.TicketType)
+                    .ThenInclude(tt => tt.Event)
+                .FirstOrDefaultAsync(r => r.RegistrationId == registrationId && r.UserId == currentUserId.Value);
+
+            if (registration == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy vé hợp lệ cho tài khoản hiện tại.");
+            }
+
+            var eventEntity = registration.TicketType.Event;
+            if (eventEntity == null || string.IsNullOrWhiteSpace(eventEntity.OnlineUrl))
+            {
+                throw new InvalidOperationException("Sự kiện này không hỗ trợ tham gia trực tuyến.");
+            }
+
+            var roomId = $"event-{eventEntity.EventId}";
+            var userName = _currentUserService.GetCurrentUserEmail() ?? "User";
+            var userIdentifier = registration.RegistrationId.ToString("N");
+
+            return new JoinMeetingInfoDto
+            {
+                RegistrationId = registration.RegistrationId,
+                UserId = registration.UserId,
+                EventId = eventEntity.EventId,
+                Title = eventEntity.Title,
+                StartTime = eventEntity.StartTime,
+                EndTime = eventEntity.EndTime,
+                RoomId = roomId,
+                Role = "Host",
+                UserName = userName,
+                UserIdentifier = userIdentifier
+            };
         }
     }
 }
