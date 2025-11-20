@@ -19,7 +19,10 @@ jobs:
         run: dotnet build ./EventPlatform.WebApi/EventPlatform.WebApi.csproj --configuration Release --runtime win-x86 --no-restore
 
       - name: Publish
-        run: dotnet publish ./EventPlatform.WebApi/EventPlatform.WebApi.csproj --configuration Release --output ./publish --runtime win-x86 --no-build
+        run: dotnet publish ./EventPlatform.WebApi/EventPlatform.WebApi.csproj --configuration Release --output "${{ github.workspace }}/publish" --runtime win-x86 --no-build
+
+        - name: Check publish directory
+        run: dir "${{ github.workspace }}/publish"
         
       - name: Test with .NET
         run: dotnet test
@@ -27,8 +30,8 @@ jobs:
       - name: Deploy to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
         with:
-          website-name: ${{ secrets.SITE_SECRET }}
-          server-computer-name: ${{ secrets.SITE_LINK_SECRET }}
-          server-username: ${{ secrets.SITE_SECRET }}
-          server-password: ${{ secrets.SITE_KEY_SECRET }}
-          source-path: ./publish
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: "${{ github.workspace }}/publish"
