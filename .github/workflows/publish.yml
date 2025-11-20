@@ -21,7 +21,7 @@ jobs:
       - name: Publish
         run: dotnet publish ./EventPlatform.WebApi/EventPlatform.WebApi.csproj --configuration Release --output "${{ github.workspace }}/publish" --runtime win-x86 --no-build
 
-        - name: Check publish directory
+      - name: Check publish directory
         run: dir "${{ github.workspace }}/publish"
         
       - name: Test with .NET
