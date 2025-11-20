@@ -240,15 +240,12 @@ namespace EventPlatform.Infrastructure.Services.Payment
                     Type = ticketType.Name
                 };
 
-                // 2. Chuyển sang JSON string & Mã hóa URL
                 string jsonString = JsonSerializer.Serialize(qrPayload);
                 string encodedData = Uri.EscapeDataString(jsonString);
 
-                // 3. API QR Code (Thêm margin=15 để tạo viền trắng đẹp hơn)
                 string qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=15&data={encodedData}";
                 string location = evt.Location ?? evt.VenueName;
 
-                // 4. Giao diện Vé "Xịn" (Ticket Card Style)
                 body = commonInfo + $@"
         <div style='margin: 30px auto; max-width: 350px; font-family: Arial, sans-serif;'>
             <div style='background-color: #e91e63; color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;'>
