@@ -212,6 +212,7 @@ namespace EventPlatform.Infrastructure.Services.Event
             var registration = await _context.Registrations
                 .Include(r => r.TicketType)
                     .ThenInclude(tt => tt.Event)
+                .Include(u=> u.User)
                 .FirstOrDefaultAsync(r => r.RegistrationId == registrationId && r.UserId == currentUserId.Value);
 
             if (registration == null)
