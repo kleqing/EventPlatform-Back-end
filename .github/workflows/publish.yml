@@ -31,4 +31,4 @@ jobs:
           server-computer-name: ${{ secrets.SITE_LINK_SECRET }}
           server-username: ${{ secrets.SITE_SECRET }}
           server-password: ${{ secrets.SITE_KEY_SECRET }}
-          package: ./publish
+          source-path: ./publish
