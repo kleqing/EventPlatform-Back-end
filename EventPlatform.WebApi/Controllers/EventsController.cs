@@ -17,14 +17,10 @@ namespace EventPlatform.WebApi.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
-        private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
 
-        public EventsController(IEventService eventService, HttpClient httpClient, IConfiguration configuration)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService;
-            _httpClient = httpClient;
-            _configuration = configuration;
         }
 
         /// <param name="query">Tham số tìm kiếm, lọc, phân trang</param>
@@ -97,14 +93,6 @@ namespace EventPlatform.WebApi.Controllers
                     SaleEndDate = t.SaleEndDate,
                 }).ToList();
                 await _eventService.CreateTicketTypes(newTicketTypes);
-                // Lấy Base URL từ cấu hình
-                var fastApiBaseUrl = UrlHelper.GetFastAPIUrl(_configuration); ;
-
-                // Dựng URL cho action UPSERT
-                var fastApiUrl = $"{fastApiBaseUrl}/internal/events/manage/{newEvent.EventId}?action=UPSERT";
-
-                // Gửi yêu cầu POST (không cần body vì FastAPI sẽ tự lấy data từ CSDL)
-                var response = await _httpClient.PostAsync(fastApiUrl, null);
             }
             catch (Exception ex)
             {
