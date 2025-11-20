@@ -14,5 +14,6 @@ namespace EventPlatform.Application.Services.Interfaces.Event
         Task<BookingResponse> CreateBookingAsync(CreateBookingRequest request);
         Task<IEnumerable<UserRegistrationDto>> GetMyRegistrationsAsync();
         Task<JoinMeetingInfoDto> GetJoinMeetingInfoAsync(Guid registrationId);
+        Task CancelBookingAsync(CancelBookingRequest request);
     }
 }

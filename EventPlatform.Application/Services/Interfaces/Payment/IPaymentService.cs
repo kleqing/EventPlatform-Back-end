@@ -15,5 +15,6 @@ namespace EventPlatform.Application.Services.Interfaces.Payment
 
         // Xử lý webhook từ Sepay
         Task HandleSepayWebhookAsync(SepayWebhookPayload payload, string apiKeyHeader);
+        Task<string?> GetPaymentStatusAsync(Guid registrationId);
     }
 }

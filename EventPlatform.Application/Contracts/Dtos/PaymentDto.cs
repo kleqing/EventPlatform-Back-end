@@ -20,20 +20,30 @@ namespace EventPlatform.Application.Contracts.Dtos
     public class SepayWebhookPayload
     {
         [JsonPropertyName("id")]
-        public string SepayTransactionId { get; set; }
+        public long Id { get; set; }
 
-        [JsonPropertyName("reference_number")]
-        public string ReferenceNumber { get; set; }
+        [JsonPropertyName("gateway")]
+        public string Gateway { get; set; }
 
-        [JsonPropertyName("transaction_content")]
-        public string TransactionContent { get; set; }
-
-        [JsonPropertyName("amount_in")]
-        public string AmountIn { get; set; } // Sepay gửi về dạng chuỗi
-
-        [JsonPropertyName("transaction_date")]
+        [JsonPropertyName("transactionDate")]
         public string TransactionDate { get; set; }
 
-        // Thêm các trường khác nếu bạn cần
+        [JsonPropertyName("accountNumber")]
+        public string AccountNumber { get; set; }
+
+        [JsonPropertyName("content")]
+        public string Content { get; set; } // "TT12..."
+
+        [JsonPropertyName("transferType")]
+        public string TransferType { get; set; }
+
+        [JsonPropertyName("transferAmount")]
+        public decimal TransferAmount { get; set; } // Sepay gửi số (10000)
+
+        [JsonPropertyName("referenceCode")]
+        public string ReferenceCode { get; set; } 
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
     }
 }

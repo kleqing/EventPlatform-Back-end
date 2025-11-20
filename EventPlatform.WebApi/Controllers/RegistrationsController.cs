@@ -44,6 +44,20 @@ namespace EventPlatform.WebApi.Controllers
             }
         }
 
+        [HttpPost("cancel")]
+        public async Task<IActionResult> CancelBooking([FromBody] CancelBookingRequest request)
+        {
+            try
+            {
+                await _registrationService.CancelBookingAsync(request);
+                return Ok(new { message = "Đã hủy đơn và hoàn vé." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("mine")]
         public async Task<IActionResult> GetMyRegistrations()
         {

@@ -5,6 +5,7 @@ using EventPlatform.Application.Services.Interfaces;
 using EventPlatform.Application.Services.Interfaces.Event;
 using EventPlatform.Domain.Entities;
 using EventPlatform.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,6 +117,48 @@ namespace EventPlatform.Infrastructure.Services.Event
             {
                 await dbTransaction.RollbackAsync();
                 throw; // Ném lỗi ra để Controller bắt
+            }
+        }
+
+        public async Task CancelBookingAsync(CancelBookingRequest request)
+        {
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.RegistrationId == request.RegistrationId);
+
+            // Chỉ hủy nếu giao dịch còn đang Pending (chưa thanh toán thành công)
+            if (transaction != null && transaction.PaymentStatus == "Pending")
+            {
+                using var dbTransaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // 2. Cập nhật trạng thái Transaction thành Cancelled
+                    transaction.PaymentStatus = "Cancelled";
+                    _context.Transactions.Update(transaction);
+
+                    // 3. HOÀN VÉ VÀO KHO (Restore Inventory)
+                    foreach (var item in request.Tickets)
+                    {
+                        var ticketType = await _context.TicketTypes.FindAsync(item.TicketTypeId);
+                        if (ticketType != null)
+                        {
+                            ticketType.AvailableQuantity += item.Quantity; // Cộng lại số lượng
+                            _context.TicketTypes.Update(ticketType);
+                        }
+                    }
+
+                    // 4. Xóa hoặc đánh dấu hủy các bản ghi Registration (Tùy logic, giữ lại nhưng đánh dấu transaction hủy)
+                    // Nếu muốn xóa sạch: 
+                    // var regs = _context.Registrations.Where(r => r.UserId == ... && r.TicketTypeId == ...);
+                    // _context.Registrations.RemoveRange(regs);
+
+                    await _context.SaveChangesAsync();
+                    await dbTransaction.CommitAsync();
+                }
+                catch
+                {
+                    await dbTransaction.RollbackAsync();
+                    throw;
+                }
             }
         }
 
