@@ -68,4 +68,3 @@ nunit-*.xml
 *.v2
 /.vs
 /EventPlatform.WebApi/.env.template
-/EventPlatform.WebApi/web.config
