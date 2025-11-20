@@ -192,76 +192,90 @@ namespace EventPlatform.Infrastructure.Services.Payment
             var priceStr = transaction.Amount.ToString("N0", new CultureInfo("vi-VN"));
             var dateStr = evt.StartTime.ToString("dd/MM/yyyy HH:mm");
 
-            // Nội dung chung
+            // Nội dung chung (Thông tin đơn hàng)
             string commonInfo = $@"
-                <h2>Thanh toán thành công!</h2>
-                <p>Xin chào <strong>{user.FullName}</strong>,</p>
-                <p>Cảm ơn bạn đã đặt vé. Dưới đây là thông tin vé của bạn:</p>
-                <hr/>
-                <ul>
-                    <li><strong>Sự kiện:</strong> {evt.Title}</li>
-                    <li><strong>Thời gian:</strong> {dateStr}</li>
-                    <li><strong>Loại vé:</strong> {ticketType.Name}</li>
-                    <li><strong>Giá vé:</strong> {priceStr} VNĐ</li>
-                    <li><strong>Mã đơn hàng:</strong> #{transaction.TransactionId}</li>
-                </ul>";
+        <div style='font-family: Arial, sans-serif; color: #333;'>
+            <h2 style='color: #e91e63;'>Thanh toán thành công!</h2>
+            <p>Xin chào <strong>{user.FullName}</strong>,</p>
+            <p>Cảm ơn bạn đã đặt vé. Dưới đây là thông tin giao dịch của bạn:</p>
+            <div style='background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;'>
+                <ul style='list-style: none; padding: 0; margin: 0;'>
+                    <li style='margin-bottom: 8px;'>📅 <strong>Sự kiện:</strong> {evt.Title}</li>
+                    <li style='margin-bottom: 8px;'>⏰ <strong>Thời gian:</strong> {dateStr}</li>
+                    <li style='margin-bottom: 8px;'>🎫 <strong>Loại vé:</strong> {ticketType.Name}</li>
+                    <li style='margin-bottom: 8px;'>💰 <strong>Giá vé:</strong> {priceStr} VNĐ</li>
+                    <li style='margin-bottom: 0;'>🧾 <strong>Mã đơn hàng:</strong> #{transaction.TransactionId}</li>
+                </ul>
+            </div>
+            <hr style='border: 0; border-top: 1px solid #eee;'/>";
 
             // Xử lý logic Online vs Offline
             if (evt.EventType == "Online")
             {
                 string joinLink = evt.OnlineUrl ?? "#";
-                // Tạo link tham gia kèm token để verify (nếu hệ thống hỗ trợ)
-                // var secureLink = $"{joinLink}?token={registration.UniqueToken}"; 
 
                 body = commonInfo + $@"
-                <div style='background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;'>
-                    <h3>ℹ️ Hướng dẫn tham gia Online</h3>
-                    <p>Sự kiện sẽ diễn ra trực tuyến. Vui lòng truy cập vào đường dẫn dưới đây đúng giờ:</p>
-                    <p style='text-align: center;'>
-                        <a href='{joinLink}' style='background-color: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;'>
-                            THAM GIA NGAY
-                        </a>
-                    </p>
-                    <p><em>Mã vé của bạn: <strong>{registration.UniqueToken}</strong></em></p>
-                </div>";
+        <div style='text-align: center; margin: 30px 0;'>
+            <div style='background-color: #e3f2fd; padding: 20px; border-radius: 10px; display: inline-block; text-align: left; border: 1px solid #bbdefb;'>
+                <h3 style='margin-top: 0; color: #0d47a1;'>ℹ️ Hướng dẫn tham gia Online</h3>
+                <p>Sự kiện sẽ diễn ra trực tuyến. Vui lòng truy cập vào đường dẫn dưới đây đúng giờ:</p>
+                <br/>
+                <div style='text-align: center;'>
+                    <a href='{joinLink}' style='background-color: #1976d2; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px;'>
+                        THAM GIA NGAY
+                    </a>
+                </div>
+                <p style='margin-top: 20px; font-size: 13px; color: #555; text-align: center;'>Mã vé của bạn: <strong>{registration.UniqueToken}</strong></p>
+            </div>
+        </div>";
             }
             else // Offline
             {
-                // 1. Tạo object chứa thông tin hiển thị trong QR
+                // 1. Tạo object chứa thông tin hiển thị trong QR (JSON)
                 var qrPayload = new
                 {
-                    Token = registration.UniqueToken, // Cái này quan trọng nhất để verify
-                    Event = evt.Title.Length > 20 ? evt.Title.Substring(0, 17) + "..." : evt.Title, 
+                    Token = registration.UniqueToken,
+                    Event = evt.Title.Length > 20 ? evt.Title.Substring(0, 17) + "..." : evt.Title,
                     User = user.FullName,
                     Type = ticketType.Name
                 };
 
-                // 2. Chuyển sang JSON string: {"Token":"...","Event":"...","User":"..."}
+                // 2. Chuyển sang JSON string & Mã hóa URL
                 string jsonString = JsonSerializer.Serialize(qrPayload);
-
-                // 3. Mã hóa URL để gửi qua API (vì JSON chứa ký tự đặc biệt như { } " :)
                 string encodedData = Uri.EscapeDataString(jsonString);
 
-                // 4. Gọi API tạo QR
-                // Lưu ý: QR chứa nhiều thông tin thì điểm ảnh sẽ nhỏ hơn, nên tăng size lên 300x300
-                string qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encodedData}";
-
+                // 3. API QR Code (Thêm margin=15 để tạo viền trắng đẹp hơn)
+                string qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=15&data={encodedData}";
                 string location = evt.Location ?? evt.VenueName;
 
+                // 4. Giao diện Vé "Xịn" (Ticket Card Style)
                 body = commonInfo + $@"
-    <div style='background-color: #f1f8e9; padding: 15px; border-radius: 5px; margin: 20px 0;'>
-        <h3>📍 Vé Check-in Sự Kiện</h3>
-        <p><strong>Địa điểm:</strong> {location}</p>
-        <p>Vui lòng đưa mã QR này cho nhân viên soát vé:</p>
-        <div style='text-align: center; margin: 20px;'>
-            <img src='{qrUrl}' alt='Ticket QR Code' style='border: 2px solid #333; padding: 5px; border-radius: 5px; width: 200px; height: 200px;'/>
-            <p style='margin-top: 10px; font-family: monospace; color: #555;'>{registration.UniqueToken}</p>
-        </div>
-    </div>";
+        <div style='margin: 30px auto; max-width: 350px; font-family: Arial, sans-serif;'>
+            <div style='background-color: #e91e63; color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;'>
+                <h3 style='margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;'>VÉ THAM DỰ</h3>
+                <p style='margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;'>Vui lòng xuất trình tại quầy soát vé</p>
+            </div>
+
+            <div style='background-color: #ffffff; border: 2px dashed #e91e63; border-top: none; border-radius: 0 0 12px 12px; padding: 30px 20px; text-align: center;'>
+                
+                <img src='{qrUrl}' alt='Check-in QR Code' 
+                     style='width: 200px; height: 200px; display: block; margin: 0 auto; border-radius: 8px;'/>
+                
+                <div style='height: 1px; background-color: #eee; margin: 25px 0;'></div>
+
+                <div style='text-align: left;'>
+                    <p style='margin: 0 0 5px; font-size: 12px; color: #999; text-transform: uppercase;'>Khách hàng</p>
+                    <p style='margin: 0 0 15px; font-size: 16px; font-weight: bold; color: #333;'>{user.FullName}</p>
+
+                    <p style='margin: 0 0 5px; font-size: 12px; color: #999; text-transform: uppercase;'>Địa điểm</p>
+                    <p style='margin: 0; font-size: 14px; color: #555; line-height: 1.4;'>📍 {location}</p>
+                </div>
+            </div>
+        </div>";
             }
 
             // Footer
-            body += "<p>Cảm ơn bạn đã sử dụng EventPlatform!</p>";
+            body += "</div><p style='text-align: center; font-size: 12px; color: #aaa; margin-top: 30px;'>Cảm ơn bạn đã sử dụng EventPlatform!</p>";
 
             await _emailSender.SendEmailAsync(user.Email, subject, body);
         }
