@@ -26,7 +26,6 @@ namespace EventPlatform.WebApi.Controllers
         {
             if (string.IsNullOrEmpty(token)) return BadRequest("Token không hợp lệ.");
 
-            // 1. Tìm vé dựa trên Token
             var registration = await _context.Registrations
                 .Include(r => r.TicketType)
                     .ThenInclude(tt => tt.Event)
@@ -36,7 +35,6 @@ namespace EventPlatform.WebApi.Controllers
             if (registration == null)
                 return NotFound("Vé không tồn tại.");
 
-            // Kiểm tra thanh toán (Transaction thành công mới được vào)
             var isPaid = registration.Transactions.Any(t => t.PaymentStatus == "Success");
             if (!isPaid)
                 return Content("Lỗi: Vé chưa được thanh toán thành công.");
@@ -66,21 +64,35 @@ namespace EventPlatform.WebApi.Controllers
         // [Authorize(Roles = "Admin,Speaker")] // Bỏ comment để chỉ cho phép BTC quét
         public async Task<IActionResult> VerifyOfflineTicket([FromBody] CheckinRequest request)
         {
+            // 1. Làm sạch dữ liệu đầu vào (Xóa khoảng trắng thừa)
+            var tokenToVerify = request.Token?.Trim();
+
+            if (string.IsNullOrEmpty(tokenToVerify))
+            {
+                return Ok(new { isValid = false, message = "❌ Token trống!" });
+            }
+
             var registration = await _context.Registrations
                 .Include(r => r.User)
                 .Include(r => r.TicketType)
                     .ThenInclude(tt => tt.Event)
                 .Include(r => r.Transactions)
-                .FirstOrDefaultAsync(r => r.UniqueToken == request.Token);
+                .FirstOrDefaultAsync(r => r.UniqueToken == tokenToVerify);
 
+            // 3. Validate
             if (registration == null)
-                return Ok(new { isValid = false, message = "❌ Mã vé không tồn tại!" });
+            {
+                return Ok(new
+                {
+                    isValid = false,
+                    message = $"❌ Mã vé không tồn tại! (Server nhận: '{tokenToVerify}')"
+                });
+            }
 
             var isPaid = registration.Transactions.Any(t => t.PaymentStatus == "Success");
             if (!isPaid)
                 return Ok(new { isValid = false, message = "⚠️ Vé chưa thanh toán!" });
 
-            // 4. Kiểm tra xem đã check-in trước đó chưa? (Chống dùng lại vé)
             if (registration.CheckInTime != null)
             {
                 return Ok(new
@@ -91,12 +103,10 @@ namespace EventPlatform.WebApi.Controllers
                 });
             }
 
-            // 5. Hợp lệ -> Update DB
             registration.CheckInTime = DateTime.UtcNow;
             _context.Registrations.Update(registration);
             await _context.SaveChangesAsync();
 
-            // 6. Trả về thông tin khách để BTC đối chiếu
             return Ok(new
             {
                 isValid = true,
